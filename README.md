@@ -70,8 +70,8 @@ LetAgents_DYOR/
 - Environment variables can be set in `backend/.env` or exported before running the server.
 - Start the FastAPI server locally with:
   ```bash
+  pip install -r backend/requirements.txt
   uvicorn backend.main:app --host 0.0.0.0 --port 8000
-  ```
 - Mobile code lives under `mobile/` and uses Flutter 3.x.
 - SQLite is used by default; set Oracle DB credentials in `.env` to use Autonomous DB.
 
