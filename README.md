@@ -68,6 +68,10 @@ LetAgents_DYOR/
 - Contributions are welcome! Open issues or submit pull requests.
 - The CLI can still be executed via `python -m cli.main` or you can call `POST /analyze` from the API.
 - Environment variables can be set in `backend/.env` or exported before running the server.
+- Start the FastAPI server locally with:
+  ```bash
+  uvicorn backend.main:app --host 0.0.0.0 --port 8000
+  ```
 - Mobile code lives under `mobile/` and uses Flutter 3.x.
 - SQLite is used by default; set Oracle DB credentials in `.env` to use Autonomous DB.
 
