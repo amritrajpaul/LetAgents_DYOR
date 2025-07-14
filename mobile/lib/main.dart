@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'analysis_screen.dart';
+import 'history_screen.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import 'services/auth_service.dart';
@@ -27,6 +28,7 @@ class LetAgentsDYORApp extends StatelessWidget {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
         '/analysis': (_) => const AnalysisScreen(),
+        '/history': (_) => const HistoryScreen(),
       },
     );
   }
