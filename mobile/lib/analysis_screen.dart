@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'login_screen.dart';
+import 'history_screen.dart';
 import 'services/auth_service.dart';
 
 const String backendUrl = 'http://localhost:8000';
@@ -101,6 +102,17 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       appBar: AppBar(
         title: const Text('Analysis'),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const HistoryScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.history),
+            tooltip: 'History',
+          ),
           IconButton(
             onPressed: _logout,
             icon: const Icon(Icons.logout),
