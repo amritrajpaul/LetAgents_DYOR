@@ -37,7 +37,7 @@ docker build -t letagents-backend .
    ```
 4. Run the container, mapping the exposed port. The backend already binds to `0.0.0.0`, so it will be reachable externally:
    ```bash
-   docker run -d -p 80:8000 vyapar-backend
+docker run -d -p 80:8000 letagents-backend
    ```
    This maps port 8000 in the container to port 80 on the VM (you can also expose 8000 directly).
 
