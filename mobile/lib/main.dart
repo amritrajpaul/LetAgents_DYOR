@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'home_screen.dart';
+import 'analysis_screen.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import 'services/auth_service.dart';
@@ -22,11 +22,11 @@ class LetAgentsDYORApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: AuthService.token == null ? const LoginScreen() : const HomeScreen(),
+      home: AuthService.token == null ? const LoginScreen() : const AnalysisScreen(),
       routes: {
         '/login': (_) => const LoginScreen(),
         '/register': (_) => const RegisterScreen(),
-        '/home': (_) => const HomeScreen(),
+        '/analysis': (_) => const AnalysisScreen(),
       },
     );
   }

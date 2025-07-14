@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'home_screen.dart';
+import 'analysis_screen.dart';
 import 'register_screen.dart';
 import 'services/auth_service.dart';
 
@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
         await AuthService.saveToken(data['token']);
         if (!mounted) return;
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const AnalysisScreen()),
         );
       } else {
         setState(() {
