@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 
-void main() {
+import 'home_screen.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
+import 'services/auth_service.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AuthService.loadToken();
   runApp(const LetAgentsDYORApp());
 }
 
@@ -15,19 +22,12 @@ class LetAgentsDYORApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
-      routes: const {},
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text('LetAgentsDYOR Home')),
+      home: AuthService.token == null ? const LoginScreen() : const HomeScreen(),
+      routes: {
+        '/login': (_) => const LoginScreen(),
+        '/register': (_) => const RegisterScreen(),
+        '/home': (_) => const HomeScreen(),
+      },
     );
   }
 }
