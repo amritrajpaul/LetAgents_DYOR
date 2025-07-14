@@ -33,7 +33,7 @@ There are two options for deployment on the VM.
 2. Clone this repository on the VM and navigate to the project directory.
 3. Build or pull the container image. If a prebuilt image is available on Docker Hub or the Oracle Container Registry, you can pull it. Otherwise build from the Dockerfile:
    ```bash
-   docker build -t vyapar-backend .
+docker build -t letagents-backend .
    ```
 4. Run the container, mapping the exposed port. The backend already binds to `0.0.0.0`, so it will be reachable externally:
    ```bash
