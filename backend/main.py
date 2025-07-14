@@ -197,7 +197,7 @@ def history_detail(
         "ticker": record.ticker,
         "date": record.date,
         "decision": record.decision,
-        "report": record.full_report,
+"report": json.loads(record.full_report),
     }
 
 # To run locally:
