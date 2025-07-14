@@ -146,7 +146,7 @@ def analyze(
             ticker=request.ticker,
             date=request.date,
             decision=decision,
-            full_report=final_state,
+full_report=json.dumps(final_state),
         )
         db.add(record)
         db.commit()
