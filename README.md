@@ -67,6 +67,7 @@ LetAgents_DYOR/
 
 - Contributions are welcome! Open issues or submit pull requests.
 - The CLI can still be executed via `python -m cli.main` or you can call `POST /analyze` from the API.
+- Retrieve past analyses with `GET /history` and view details with `GET /history/{id}`.
 - Environment variables can be set in `backend/.env` or exported before running the server.
 - Start the FastAPI server locally with:
   ```bash

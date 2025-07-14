@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 from .database import Base, engine, get_db
-from .models import User
+from .models import User, AnalysisRecord
 from passlib.context import CryptContext
 
 app = FastAPI()
@@ -115,7 +115,9 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
 
 @app.post("/analyze")
 def analyze(
-    request: AnalyzeRequest, current_user: User = Depends(get_current_user)
+    request: AnalyzeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Run the TradingAgents analysis and return the results."""
 
@@ -138,6 +140,18 @@ def analyze(
 
         final_state, decision = graph.propagate(request.ticker, request.date)
 
+        # Persist the result
+        record = AnalysisRecord(
+            user_id=current_user.id,
+            ticker=request.ticker,
+            date=request.date,
+            decision=decision,
+            full_report=final_state,
+        )
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+
         return {
             "ticker": request.ticker,
             "date": request.date,
@@ -146,6 +160,45 @@ def analyze(
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/history")
+def history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return a list of previous analyses for the authenticated user."""
+    records = (
+        db.query(AnalysisRecord)
+        .filter(AnalysisRecord.user_id == current_user.id)
+        .order_by(AnalysisRecord.id.desc())
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "ticker": r.ticker,
+            "date": r.date,
+            "decision": r.decision,
+        }
+        for r in records
+    ]
+
+
+@app.get("/history/{record_id}")
+def history_detail(
+    record_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return full details of a past analysis."""
+    record = db.query(AnalysisRecord).filter(AnalysisRecord.id == record_id).first()
+    if not record or record.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Record not found")
+    return {
+        "id": record.id,
+        "ticker": record.ticker,
+        "date": record.date,
+        "decision": record.decision,
+        "report": record.full_report,
+    }
 
 # To run locally:
 # uvicorn backend.main:app --host 0.0.0.0 --port 8000
