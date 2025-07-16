@@ -13,11 +13,29 @@ class FinancialSituationMemory:
         self.chroma_client = chromadb.Client(Settings(allow_reset=True))
         # ``create_collection`` raises an exception if the collection already
         # exists. When the application restarts it should reuse the existing
-        # collection instead of failing, so ``get_or_create_collection`` is used
-        # here to create the collection only if it does not exist.
-        self.situation_collection = self.chroma_client.get_or_create_collection(
-            name=name
-        )
+        # collection instead of failing. ``get_or_create_collection`` handles
+        # this logic in recent versions of chromadb. For compatibility with
+        # older versions, we fall back to ``create_collection`` and catch the
+        # error if the collection already exists.
+        try:
+            self.situation_collection = self.chroma_client.get_or_create_collection(
+                name=name
+            )
+        except AttributeError:
+            # Older chromadb versions (<1.0.12) don't have ``get_or_create_collection``
+            try:
+                self.situation_collection = self.chroma_client.create_collection(
+                    name=name
+                )
+            except Exception:
+                self.situation_collection = self.chroma_client.get_collection(
+                    name=name
+                )
+        except Exception:
+            # ``get_or_create_collection`` may raise if the collection exists on
+            # some backends, so gracefully fall back to retrieving it.
+            self.situation_collection = self.chroma_client.get_collection(name=name)
+
 
     def get_embedding(self, text):
         """Get OpenAI embedding for a text"""
