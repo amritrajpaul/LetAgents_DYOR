@@ -19,15 +19,15 @@ def create_msg_delete():
     def delete_messages(state):
         """Clear messages and add placeholder for Anthropic compatibility"""
         messages = state["messages"]
-        
+
         # Remove all messages
         removal_operations = [RemoveMessage(id=m.id) for m in messages]
-        
+
         # Add a minimal placeholder message
         placeholder = HumanMessage(content="Continue")
-        
+
         return {"messages": removal_operations + [placeholder]}
-    
+
     return delete_messages
 
 
@@ -60,7 +60,7 @@ class Toolkit:
         Returns:
             str: A formatted dataframe containing the latest global news from Reddit in the specified time frame.
         """
-        
+
         global_news_result = interface.get_reddit_global_news(curr_date, 7, 5)
 
         return global_news_result
@@ -91,9 +91,7 @@ class Toolkit:
         start_date = datetime.strptime(start_date, "%Y-%m-%d")
         look_back_days = (end_date - start_date).days
 
-        finnhub_news_result = interface.get_finnhub_news(
-            ticker, end_date_str, look_back_days
-        )
+        finnhub_news_result = interface.get_finnhub_news(ticker, end_date_str, look_back_days)
 
         return finnhub_news_result
 
@@ -165,12 +163,8 @@ class Toolkit:
     @tool
     def get_stockstats_indicators_report(
         symbol: Annotated[str, "ticker symbol of the company"],
-        indicator: Annotated[
-            str, "technical indicator to get the analysis and report of"
-        ],
-        curr_date: Annotated[
-            str, "The current trading date you are trading on, YYYY-mm-dd"
-        ],
+        indicator: Annotated[str, "technical indicator to get the analysis and report of"],
+        curr_date: Annotated[str, "The current trading date you are trading on, YYYY-mm-dd"],
         look_back_days: Annotated[int, "how many days to look back"] = 30,
     ) -> str:
         """
@@ -194,12 +188,8 @@ class Toolkit:
     @tool
     def get_stockstats_indicators_report_online(
         symbol: Annotated[str, "ticker symbol of the company"],
-        indicator: Annotated[
-            str, "technical indicator to get the analysis and report of"
-        ],
-        curr_date: Annotated[
-            str, "The current trading date you are trading on, YYYY-mm-dd"
-        ],
+        indicator: Annotated[str, "technical indicator to get the analysis and report of"],
+        curr_date: Annotated[str, "The current trading date you are trading on, YYYY-mm-dd"],
         look_back_days: Annotated[int, "how many days to look back"] = 30,
     ) -> str:
         """
@@ -237,9 +227,7 @@ class Toolkit:
             str: a report of the sentiment in the past 30 days starting at curr_date
         """
 
-        data_sentiment = interface.get_finnhub_company_insider_sentiment(
-            ticker, curr_date, 30
-        )
+        data_sentiment = interface.get_finnhub_company_insider_sentiment(ticker, curr_date, 30)
 
         return data_sentiment
 
@@ -261,9 +249,7 @@ class Toolkit:
             str: a report of the company's insider transactions/trading information in the past 30 days
         """
 
-        data_trans = interface.get_finnhub_company_insider_transactions(
-            ticker, curr_date, 30
-        )
+        data_trans = interface.get_finnhub_company_insider_transactions(ticker, curr_date, 30)
 
         return data_trans
 
@@ -335,9 +321,7 @@ class Toolkit:
                 str: a report of the company's most recent income statement
         """
 
-        data_income_stmt = interface.get_simfin_income_statements(
-            ticker, freq, curr_date
-        )
+        data_income_stmt = interface.get_simfin_income_statements(ticker, freq, curr_date)
 
         return data_income_stmt
 
@@ -361,9 +345,9 @@ class Toolkit:
 
         return google_news_results
 
+    @staticmethod
     @tool
     def get_stock_news_openai(
-        self,
         ticker: Annotated[str, "the company's ticker"],
         curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     ):
@@ -376,15 +360,13 @@ class Toolkit:
             str: A formatted string containing the latest news about the company on the given date.
         """
 
-        openai_news_results = interface.get_stock_news_openai(
-            ticker, curr_date, self.config.get("openai_api_key")
-        )
+        openai_news_results = interface.get_stock_news_openai(ticker, curr_date, Toolkit._config.get("openai_api_key"))
 
         return openai_news_results
 
+    @staticmethod
     @tool
     def get_global_news_openai(
-        self,
         curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     ):
         """
@@ -395,15 +377,13 @@ class Toolkit:
             str: A formatted string containing the latest macroeconomic news on the given date.
         """
 
-        openai_news_results = interface.get_global_news_openai(
-            curr_date, self.config.get("openai_api_key")
-        )
+        openai_news_results = interface.get_global_news_openai(curr_date, Toolkit._config.get("openai_api_key"))
 
         return openai_news_results
 
+    @staticmethod
     @tool
     def get_fundamentals_openai(
-        self,
         ticker: Annotated[str, "the company's ticker"],
         curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     ):
@@ -417,7 +397,7 @@ class Toolkit:
         """
 
         openai_fundamentals_results = interface.get_fundamentals_openai(
-            ticker, curr_date, self.config.get("openai_api_key")
+            ticker, curr_date, Toolkit._config.get("openai_api_key")
         )
 
         return openai_fundamentals_results
