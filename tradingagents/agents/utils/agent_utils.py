@@ -361,9 +361,9 @@ class Toolkit:
 
         return google_news_results
 
-    @staticmethod
     @tool
     def get_stock_news_openai(
+        self,
         ticker: Annotated[str, "the company's ticker"],
         curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     ):
@@ -382,9 +382,9 @@ class Toolkit:
 
         return openai_news_results
 
-    @staticmethod
     @tool
     def get_global_news_openai(
+        self,
         curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     ):
         """
@@ -401,9 +401,9 @@ class Toolkit:
 
         return openai_news_results
 
-    @staticmethod
     @tool
     def get_fundamentals_openai(
+        self,
         ticker: Annotated[str, "the company's ticker"],
         curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
     ):
