@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'login_screen.dart';
 import 'history_screen.dart';
 import 'services/auth_service.dart';
+import 'ticker_utils.dart';
 
 const String backendUrl = 'http://localhost:8000';
 
@@ -42,7 +43,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Future<void> _analyze() async {
-    final ticker = _tickerController.text.trim();
+    final ticker = _tickerController.text.trim().toUpperCase();
     final date = _dateController.text.trim();
 
     if (ticker.isEmpty || date.isEmpty) {
@@ -51,6 +52,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       });
       return;
     }
+
+    if (!isValidTicker(ticker)) {
+      setState(() {
+        _error = 'Invalid ticker format';
+      });
+      return;
+    }
+
+    _tickerController.text = ticker;
 
     setState(() {
       _loading = true;
@@ -177,7 +187,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             ),
             const SizedBox(height: 16),
             if (_error != null) ...[
-              Text(_error!, style: const TextStyle(color: Colors.red)),
+              SelectableText(_error!, style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 12),
             ],
             _loading

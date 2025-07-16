@@ -195,7 +195,12 @@ def analyze_stream(
                 last_state = chunk
                 if chunk.get("messages"):
                     msg_obj = chunk["messages"][-1]
-                    message = getattr(msg_obj, "content", str(msg_obj))
+                    if hasattr(msg_obj, "content"):
+                        message = msg_obj.content
+                    elif isinstance(msg_obj, dict):
+                        message = json.dumps(msg_obj)
+                    else:
+                        message = str(msg_obj)
                     yield {
                         "event": "update",
                         "data": {"message": message},
