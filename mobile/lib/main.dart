@@ -19,8 +19,11 @@ class LetAgentsDYORApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'LetAgentsDYOR',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+      theme: ThemeData.dark().copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.cyan,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
       ),
       home: AuthService.token == null ? const LoginScreen() : const AnalysisScreen(),
