@@ -84,6 +84,19 @@ class UserLogin(BaseModel):
     password: str
 
 
+def compute_data_availability(state: dict) -> dict:
+    """Return flags indicating which sections contain useful data."""
+    return {
+        "macro_news": bool(state.get("news_report")),
+        "analyst_breakdown": bool(
+            state.get("investment_debate_state", {}).get("history")
+        ),
+        "risk_assessment": bool(state.get("risk_debate_state", {}).get("history")),
+        "bullish_momentum": bool(state.get("market_report")),
+        "inflow_up": bool(state.get("fundamentals_report")),
+    }
+
+
 @app.get("/")
 def read_root():
     """Health check route."""
@@ -158,6 +171,7 @@ full_report=json.dumps(final_state),
             "date": request.date,
             "decision": decision,
             "report": final_state,
+            "availability": compute_data_availability(final_state),
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -232,6 +246,7 @@ def analyze_stream(
                         "date": request.date,
                         "decision": decision,
                         "report": final_state,
+                        "availability": compute_data_availability(final_state),
                     }
                 ),
             )
