@@ -149,7 +149,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analysis'),
+        title: const Text('Trading Agents'),
         actions: [
           IconButton(
             onPressed: () {
@@ -169,7 +169,54 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           ),
         ],
       ),
-      body: Padding(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+          final content = SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInputPanel(),
+                  const SizedBox(height: 16),
+                  _buildHighlights(),
+                  const SizedBox(height: 16),
+                  _buildInsightSections(),
+                  const SizedBox(height: 80),
+                ],
+              ),
+            ),
+          );
+
+          return Stack(
+            children: [
+              isWide
+                  ? Row(
+                      children: [
+                        Expanded(child: content),
+                        if (_decision != null) _buildRecommendationBanner(),
+                      ],
+                    )
+                  : content,
+              if (!isWide && _decision != null)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: _buildRecommendationBanner(),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInputPanel() {
+    return Card(
+      elevation: 2,
+      child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +234,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             ),
             const SizedBox(height: 16),
             if (_error != null) ...[
-              SelectableText(_error!, style: const TextStyle(color: Colors.red)),
+              SelectableText(
+                _error!,
+                style: const TextStyle(color: Colors.red),
+              ),
               const SizedBox(height: 12),
             ],
             _loading
@@ -199,28 +249,132 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                       child: const Text('Analyze'),
                     ),
                   ),
-            const SizedBox(height: 16),
-            if (_messages.isNotEmpty)
-              Expanded(
-                child: ListView(
-                  children:
-                      _messages.map((m) => Text(m)).toList(growable: false),
-                ),
-              ),
-            if (_decision != null) ...[
-              Text(
-                'Decision: $_decision',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: SelectableText(_report ?? ''),
-                ),
-              ),
+            if (_messages.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ..._messages.map((m) => Text(m)),
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHighlights() {
+    return Wrap(
+      spacing: 8,
+      children: const [
+        Chip(icon: Icon(Icons.trending_up), label: Text('Bullish Momentum')),
+        Chip(icon: Icon(Icons.attach_money), label: Text('Inflow Up')),
+        Chip(icon: Icon(Icons.flag), label: Text('Low Risk')),
+      ],
+    );
+  }
+
+  Widget _buildInsightSections() {
+    return ExpansionPanelList.radio(
+      children: [
+        ExpansionPanelRadio(
+          value: 'news',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Macro & Market News'),
+          ),
+          body: Column(
+            children: const [
+              ListTile(
+                title: Text('Headline 1'),
+                subtitle: Text('Economic news summary'),
+              ),
+              ListTile(
+                title: Text('Headline 2'),
+                subtitle: Text('More news'),
+              ),
+              ListTile(
+                title: Text('Headline 3'),
+                subtitle: Text('Third news item'),
+              ),
+            ],
+          ),
+        ),
+        ExpansionPanelRadio(
+          value: 'analysts',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Analyst Team Breakdown'),
+          ),
+          body: Column(
+            children: const [
+              ListTile(
+                leading: CircleAvatar(child: Text('RA')),
+                title: Text('Risky Analyst'),
+                subtitle: Text('Sell -30%'),
+              ),
+              ListTile(
+                leading: CircleAvatar(child: Text('BA')),
+                title: Text('Bull Analyst'),
+                subtitle: Text('Buy +20%'),
+              ),
+            ],
+          ),
+        ),
+        ExpansionPanelRadio(
+          value: 'risk',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Risk Assessment'),
+          ),
+          body: Column(
+            children: const [
+              ListTile(
+                leading: Icon(Icons.bar_chart),
+                title: Text('Technical Risk'),
+                subtitle: Text('Overbought'),
+              ),
+              ListTile(
+                leading: Icon(Icons.language),
+                title: Text('Geopolitical Risk'),
+                subtitle: Text('Low'),
+              ),
+              ListTile(
+                leading: Icon(Icons.warning),
+                title: Text('Earnings Triggers'),
+                subtitle: Text('Next week'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendationBanner() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blueGrey.shade900,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+        ),
+      ),
+      width: 300,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Suggested Action: ${_decision ?? ''}',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          const Divider(color: Colors.white54),
+          Row(
+            children: const [
+              Icon(Icons.warning, color: Colors.orange),
+              SizedBox(width: 8),
+              Text(
+                'Trigger: RSI > 70',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
