@@ -37,6 +37,8 @@ class TradingAgentsGraph:
         selected_analysts=["market", "social", "news", "fundamentals"],
         debug=False,
         config: Dict[str, Any] = None,
+        openai_api_key: str | None = None,
+        finnhub_api_key: str | None = None,
     ):
         """Initialize the trading agents graph and components.
 
@@ -47,6 +49,10 @@ class TradingAgentsGraph:
         """
         self.debug = debug
         self.config = config or DEFAULT_CONFIG
+        if openai_api_key is not None:
+            self.config["openai_api_key"] = openai_api_key
+        if finnhub_api_key is not None:
+            self.config["finnhub_api_key"] = finnhub_api_key
 
         # Update the interface's config
         set_config(self.config)
@@ -59,8 +65,16 @@ class TradingAgentsGraph:
 
         # Initialize LLMs
         if self.config["llm_provider"].lower() == "openai" or self.config["llm_provider"] == "ollama" or self.config["llm_provider"] == "openrouter":
-            self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
-            self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
+            self.deep_thinking_llm = ChatOpenAI(
+                model=self.config["deep_think_llm"],
+                base_url=self.config["backend_url"],
+                openai_api_key=self.config.get("openai_api_key"),
+            )
+            self.quick_thinking_llm = ChatOpenAI(
+                model=self.config["quick_think_llm"],
+                base_url=self.config["backend_url"],
+                openai_api_key=self.config.get("openai_api_key"),
+            )
         elif self.config["llm_provider"].lower() == "anthropic":
             self.deep_thinking_llm = ChatAnthropic(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
             self.quick_thinking_llm = ChatAnthropic(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
@@ -73,11 +87,21 @@ class TradingAgentsGraph:
         self.toolkit = Toolkit(config=self.config)
 
         # Initialize memories
-        self.bull_memory = FinancialSituationMemory("bull_memory", self.config)
-        self.bear_memory = FinancialSituationMemory("bear_memory", self.config)
-        self.trader_memory = FinancialSituationMemory("trader_memory", self.config)
-        self.invest_judge_memory = FinancialSituationMemory("invest_judge_memory", self.config)
-        self.risk_manager_memory = FinancialSituationMemory("risk_manager_memory", self.config)
+        self.bull_memory = FinancialSituationMemory(
+            "bull_memory", self.config, self.config.get("openai_api_key")
+        )
+        self.bear_memory = FinancialSituationMemory(
+            "bear_memory", self.config, self.config.get("openai_api_key")
+        )
+        self.trader_memory = FinancialSituationMemory(
+            "trader_memory", self.config, self.config.get("openai_api_key")
+        )
+        self.invest_judge_memory = FinancialSituationMemory(
+            "invest_judge_memory", self.config, self.config.get("openai_api_key")
+        )
+        self.risk_manager_memory = FinancialSituationMemory(
+            "risk_manager_memory", self.config, self.config.get("openai_api_key")
+        )
 
         # Create tool nodes
         self.tool_nodes = self._create_tool_nodes()

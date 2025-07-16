@@ -376,7 +376,9 @@ class Toolkit:
             str: A formatted string containing the latest news about the company on the given date.
         """
 
-        openai_news_results = interface.get_stock_news_openai(ticker, curr_date)
+        openai_news_results = interface.get_stock_news_openai(
+            ticker, curr_date, self.config.get("openai_api_key")
+        )
 
         return openai_news_results
 
@@ -393,7 +395,9 @@ class Toolkit:
             str: A formatted string containing the latest macroeconomic news on the given date.
         """
 
-        openai_news_results = interface.get_global_news_openai(curr_date)
+        openai_news_results = interface.get_global_news_openai(
+            curr_date, self.config.get("openai_api_key")
+        )
 
         return openai_news_results
 
@@ -413,7 +417,7 @@ class Toolkit:
         """
 
         openai_fundamentals_results = interface.get_fundamentals_openai(
-            ticker, curr_date
+            ticker, curr_date, self.config.get("openai_api_key")
         )
 
         return openai_fundamentals_results

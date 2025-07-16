@@ -124,9 +124,6 @@ def analyze(
     """Run the TradingAgents analysis and return the results."""
 
     try:
-        # Use user-specific API keys for this request
-        os.environ["OPENAI_API_KEY"] = current_user.openai_api_key
-        os.environ["FINNHUB_API_KEY"] = current_user.finnhub_api_key
 
         # Configure graph based on research depth
         config = DEFAULT_CONFIG.copy()
@@ -138,6 +135,8 @@ def analyze(
             request.analysts or ["market", "social", "news", "fundamentals"],
             debug=True,
             config=config,
+            openai_api_key=current_user.openai_api_key,
+            finnhub_api_key=current_user.finnhub_api_key,
         )
 
         final_state, decision = graph.propagate(request.ticker, request.date)
@@ -174,8 +173,6 @@ def analyze_stream(
 
     def event_generator():
         try:
-            os.environ["OPENAI_API_KEY"] = current_user.openai_api_key
-            os.environ["FINNHUB_API_KEY"] = current_user.finnhub_api_key
 
             config = DEFAULT_CONFIG.copy()
             config["max_debate_rounds"] = request.research_depth
@@ -185,6 +182,8 @@ def analyze_stream(
                 request.analysts or ["market", "social", "news", "fundamentals"],
                 debug=True,
                 config=config,
+                openai_api_key=current_user.openai_api_key,
+                finnhub_api_key=current_user.finnhub_api_key,
             )
 
             init_state = graph.propagator.create_initial_state(
