@@ -36,6 +36,7 @@ class FinancialSituationMemory:
             # some backends, so gracefully fall back to retrieving it.
             self.situation_collection = self.chroma_client.get_collection(name=name)
 
+
     def get_embedding(self, text):
         """Get OpenAI embedding for a text"""
         
