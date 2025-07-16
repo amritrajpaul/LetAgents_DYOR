@@ -206,6 +206,7 @@ def analyze_stream(
                         data=json.dumps({"message": message}),
                     )
 
+
             if last_state is None:
                 raise RuntimeError("Analysis produced no output")
 
