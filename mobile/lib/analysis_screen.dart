@@ -82,28 +82,36 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       final lines = response.stream
           .transform(utf8.decoder)
           .transform(const LineSplitter());
+
+      String? currentEvent;
       await for (final line in lines) {
-        if (line.startsWith('data:')) {
+        if (line.isEmpty) {
+          currentEvent = null;
+          continue;
+        }
+
+        if (line.startsWith('event:')) {
+          currentEvent = line.substring(6).trim();
+        } else if (line.startsWith('data:')) {
           final data = jsonDecode(line.substring(5).trim()) as Map<String, dynamic>;
-          final event = data['event'] as String?;
-          if (event == 'update') {
-            setState(() {
+          if (!mounted) return;
+
+          final event = currentEvent ?? 'message';
+
+          setState(() {
+            if (event == 'update') {
               _progress = (_progress + 0.05).clamp(0.0, 0.9);
               _messages.add(data['message']?.toString() ?? '');
-            });
-          } else if (event == 'complete') {
-            setState(() {
+            } else if (event == 'complete') {
               _progress = 1.0;
               _decision = data['decision']?.toString();
               _report = jsonEncode(data['report']);
               _loading = false;
-            });
-          } else if (event == 'error') {
-            setState(() {
+            } else if (event == 'error') {
               _error = data['detail']?.toString();
               _loading = false;
-            });
-          }
+            }
+          });
         }
       }
     } catch (e) {
