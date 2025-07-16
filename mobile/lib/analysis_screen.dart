@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -21,9 +22,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final _dateController = TextEditingController();
 
   bool _loading = false;
+  double _progress = 0;
   String? _error;
   String? _decision;
   String? _report;
+  final List<String> _messages = [];
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -51,40 +54,76 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
     setState(() {
       _loading = true;
+      _progress = 0;
+      _messages.clear();
       _error = null;
       _decision = null;
       _report = null;
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('$backendUrl/analyze'),
-        headers: {
+      final client = http.Client();
+      final request = http.Request('POST', Uri.parse('$backendUrl/analyze/stream'))
+        ..headers.addAll({
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${AuthService.token}',
-        },
-        body: jsonEncode({'ticker': ticker, 'date': date}),
-      );
+        })
+        ..body = jsonEncode({'ticker': ticker, 'date': date});
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final response = await client.send(request);
+      if (response.statusCode != 200) {
         setState(() {
-          _decision = data['decision']?.toString();
-          _report = data['report']?.toString();
+          _error = 'Analysis failed: ${response.statusCode}';
+          _loading = false;
         });
-      } else {
-        setState(() {
-          _error = 'Analysis failed: ${response.body}';
-        });
+        return;
+      }
+
+      final lines = response.stream
+          .transform(utf8.decoder)
+          .transform(const LineSplitter());
+
+      String? currentEvent;
+      await for (final line in lines) {
+        if (line.isEmpty) {
+          currentEvent = null;
+          continue;
+        }
+
+        if (line.startsWith('event:')) {
+          currentEvent = line.substring(6).trim();
+        } else if (line.startsWith('data:')) {
+          final data = jsonDecode(line.substring(5).trim()) as Map<String, dynamic>;
+          if (!mounted) return;
+
+          final event = currentEvent ?? 'message';
+
+          setState(() {
+            if (event == 'update') {
+              _progress = (_progress + 0.05).clamp(0.0, 0.9);
+              _messages.add(data['message']?.toString() ?? '');
+            } else if (event == 'complete') {
+              _progress = 1.0;
+              _decision = data['decision']?.toString();
+              _report = jsonEncode(data['report']);
+              _loading = false;
+            } else if (event == 'error') {
+              _error = data['detail']?.toString();
+              _loading = false;
+            }
+          });
+        }
       }
     } catch (e) {
       setState(() {
         _error = 'Error: $e';
       });
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted && _loading) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -142,7 +181,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               const SizedBox(height: 12),
             ],
             _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? LinearProgressIndicator(value: _progress)
                 : SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -151,6 +190,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                     ),
                   ),
             const SizedBox(height: 16),
+            if (_messages.isNotEmpty)
+              Expanded(
+                child: ListView(
+                  children:
+                      _messages.map((m) => Text(m)).toList(growable: false),
+                ),
+              ),
             if (_decision != null) ...[
               Text(
                 'Decision: $_decision',

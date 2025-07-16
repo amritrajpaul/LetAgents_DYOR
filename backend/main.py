@@ -1,4 +1,5 @@
 import os
+import json
 from typing import List, Optional
 
 import jwt
@@ -13,6 +14,7 @@ from tradingagents.default_config import DEFAULT_CONFIG
 from .database import Base, engine, get_db
 from .models import User, AnalysisRecord
 from passlib.context import CryptContext
+from sse_starlette.sse import EventSourceResponse
 
 app = FastAPI()
 
@@ -122,9 +124,6 @@ def analyze(
     """Run the TradingAgents analysis and return the results."""
 
     try:
-        # Use user-specific API keys for this request
-        os.environ["OPENAI_API_KEY"] = current_user.openai_api_key
-        os.environ["FINNHUB_API_KEY"] = current_user.finnhub_api_key
 
         # Configure graph based on research depth
         config = DEFAULT_CONFIG.copy()
@@ -136,6 +135,8 @@ def analyze(
             request.analysts or ["market", "social", "news", "fundamentals"],
             debug=True,
             config=config,
+            openai_api_key=current_user.openai_api_key,
+            finnhub_api_key=current_user.finnhub_api_key,
         )
 
         final_state, decision = graph.propagate(request.ticker, request.date)
@@ -160,6 +161,76 @@ full_report=json.dumps(final_state),
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/analyze/stream")
+def analyze_stream(
+    request: AnalyzeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Stream progress of TradingAgents analysis via SSE."""
+
+    def event_generator():
+        try:
+
+            config = DEFAULT_CONFIG.copy()
+            config["max_debate_rounds"] = request.research_depth
+            config["max_risk_discuss_rounds"] = request.research_depth
+
+            graph = TradingAgentsGraph(
+                request.analysts or ["market", "social", "news", "fundamentals"],
+                debug=True,
+                config=config,
+                openai_api_key=current_user.openai_api_key,
+                finnhub_api_key=current_user.finnhub_api_key,
+            )
+
+            init_state = graph.propagator.create_initial_state(
+                request.ticker, request.date
+            )
+            args = graph.propagator.get_graph_args()
+            last_state = None
+            for chunk in graph.graph.stream(init_state, **args):
+                last_state = chunk
+                if chunk.get("messages"):
+                    msg_obj = chunk["messages"][-1]
+                    message = getattr(msg_obj, "content", str(msg_obj))
+                    yield {
+                        "event": "update",
+                        "data": {"message": message},
+                    }
+
+            if last_state is None:
+                raise RuntimeError("Analysis produced no output")
+
+            final_state = last_state
+            decision = graph.process_signal(final_state["final_trade_decision"])
+
+            record = AnalysisRecord(
+                user_id=current_user.id,
+                ticker=request.ticker,
+                date=request.date,
+                decision=decision,
+                full_report=json.dumps(final_state),
+            )
+            db.add(record)
+            db.commit()
+            db.refresh(record)
+
+            yield {
+                "event": "complete",
+                "data": {
+                    "ticker": request.ticker,
+                    "date": request.date,
+                    "decision": decision,
+                    "report": final_state,
+                },
+            }
+        except Exception as exc:
+            yield {"event": "error", "data": {"detail": str(exc)}}
+
+    return EventSourceResponse(event_generator())
 
 
 @app.get("/history")

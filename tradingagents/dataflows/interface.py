@@ -702,9 +702,9 @@ def get_YFin_data(
     return filtered_data
 
 
-def get_stock_news_openai(ticker, curr_date):
+def get_stock_news_openai(ticker, curr_date, openai_api_key=None):
     config = get_config()
-    client = OpenAI(base_url=config["backend_url"])
+    client = OpenAI(api_key=openai_api_key or config.get("openai_api_key"), base_url=config["backend_url"])
 
     response = client.responses.create(
         model=config["quick_think_llm"],
@@ -737,9 +737,9 @@ def get_stock_news_openai(ticker, curr_date):
     return response.output[1].content[0].text
 
 
-def get_global_news_openai(curr_date):
+def get_global_news_openai(curr_date, openai_api_key=None):
     config = get_config()
-    client = OpenAI(base_url=config["backend_url"])
+    client = OpenAI(api_key=openai_api_key or config.get("openai_api_key"), base_url=config["backend_url"])
 
     response = client.responses.create(
         model=config["quick_think_llm"],
@@ -772,9 +772,9 @@ def get_global_news_openai(curr_date):
     return response.output[1].content[0].text
 
 
-def get_fundamentals_openai(ticker, curr_date):
+def get_fundamentals_openai(ticker, curr_date, openai_api_key=None):
     config = get_config()
-    client = OpenAI(base_url=config["backend_url"])
+    client = OpenAI(api_key=openai_api_key or config.get("openai_api_key"), base_url=config["backend_url"])
 
     response = client.responses.create(
         model=config["quick_think_llm"],

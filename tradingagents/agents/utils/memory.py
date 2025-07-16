@@ -4,12 +4,12 @@ from openai import OpenAI
 
 
 class FinancialSituationMemory:
-    def __init__(self, name, config):
+    def __init__(self, name, config, openai_api_key=None):
         if config["backend_url"] == "http://localhost:11434/v1":
             self.embedding = "nomic-embed-text"
         else:
             self.embedding = "text-embedding-3-small"
-        self.client = OpenAI(base_url=config["backend_url"])
+        self.client = OpenAI(api_key=openai_api_key, base_url=config["backend_url"])
         self.chroma_client = chromadb.Client(Settings(allow_reset=True))
         # ``create_collection`` raises an exception if the collection already
         # exists. When the application restarts it should reuse the existing
