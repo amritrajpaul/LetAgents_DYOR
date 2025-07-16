@@ -263,9 +263,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return Wrap(
       spacing: 8,
       children: const [
-        Chip(icon: Icon(Icons.trending_up), label: Text('Bullish Momentum')),
-        Chip(icon: Icon(Icons.attach_money), label: Text('Inflow Up')),
-        Chip(icon: Icon(Icons.flag), label: Text('Low Risk')),
+        Chip(avatar: Icon(Icons.trending_up), label: Text('Bullish Momentum')),
+        Chip(avatar: Icon(Icons.attach_money), label: Text('Inflow Up')),
+        Chip(avatar: Icon(Icons.flag), label: Text('Low Risk')),
       ],
     );
   }
