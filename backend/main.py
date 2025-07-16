@@ -14,7 +14,7 @@ from tradingagents.default_config import DEFAULT_CONFIG
 from .database import Base, engine, get_db
 from .models import User, AnalysisRecord
 from passlib.context import CryptContext
-from sse_starlette.sse import EventSourceResponse
+from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
 app = FastAPI()
 
@@ -201,10 +201,11 @@ def analyze_stream(
                         message = json.dumps(msg_obj)
                     else:
                         message = str(msg_obj)
-                    yield {
-                        "event": "update",
-                        "data": {"message": message},
-                    }
+                    yield ServerSentEvent(
+                        event="update",
+                        data=json.dumps({"message": message}),
+                    )
+
 
             if last_state is None:
                 raise RuntimeError("Analysis produced no output")
@@ -223,17 +224,22 @@ def analyze_stream(
             db.commit()
             db.refresh(record)
 
-            yield {
-                "event": "complete",
-                "data": {
-                    "ticker": request.ticker,
-                    "date": request.date,
-                    "decision": decision,
-                    "report": final_state,
-                },
-            }
+            yield ServerSentEvent(
+                event="complete",
+                data=json.dumps(
+                    {
+                        "ticker": request.ticker,
+                        "date": request.date,
+                        "decision": decision,
+                        "report": final_state,
+                    }
+                ),
+            )
         except Exception as exc:
-            yield {"event": "error", "data": {"detail": str(exc)}}
+            yield ServerSentEvent(
+                event="error",
+                data=json.dumps({"detail": str(exc)}),
+            )
 
     return EventSourceResponse(event_generator())
 
