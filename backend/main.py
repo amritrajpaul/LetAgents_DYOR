@@ -1,5 +1,6 @@
 import os
 import json
+from langchain_core.messages import BaseMessage
 from typing import List, Optional
 
 import jwt
@@ -61,6 +62,13 @@ def get_current_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     return user
+
+
+def _serialize_obj(obj):
+    """Helper to make objects JSON serializable."""
+    if isinstance(obj, BaseMessage):
+        return obj.to_json()
+    return str(obj)
 
 
 class AnalyzeRequest(BaseModel):
@@ -160,7 +168,7 @@ def analyze(
             ticker=request.ticker,
             date=request.date,
             decision=decision,
-full_report=json.dumps(final_state),
+            full_report=json.dumps(final_state, default=_serialize_obj),
         )
         db.add(record)
         db.commit()
@@ -232,7 +240,7 @@ def analyze_stream(
                 ticker=request.ticker,
                 date=request.date,
                 decision=decision,
-                full_report=json.dumps(final_state),
+                full_report=json.dumps(final_state, default=_serialize_obj),
             )
             db.add(record)
             db.commit()
