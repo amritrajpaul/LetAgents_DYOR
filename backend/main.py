@@ -186,12 +186,15 @@ def analyze(
         db.commit()
         db.refresh(record)
 
+        serialized_report = json.loads(
+            json.dumps(final_state, default=_serialize_obj)
+        )
         return {
             "ticker": request.ticker,
             "date": request.date,
             "decision": decision,
-            "report": final_state,
-            "availability": compute_data_availability(final_state),
+            "report": serialized_report,
+            "availability": compute_data_availability(serialized_report),
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -266,6 +269,9 @@ def analyze_stream(
             db.commit()
             db.refresh(record)
 
+            serialized_report = json.loads(
+                json.dumps(final_state, default=_serialize_obj)
+            )
             yield ServerSentEvent(
                 event="complete",
                 data=json.dumps(
@@ -273,8 +279,10 @@ def analyze_stream(
                         "ticker": request.ticker,
                         "date": request.date,
                         "decision": decision,
-                        "report": final_state,
-                        "availability": compute_data_availability(final_state),
+                        "report": serialized_report,
+                        "availability": compute_data_availability(
+                            serialized_report
+                        ),
                     }
                 ),
             )
