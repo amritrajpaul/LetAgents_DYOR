@@ -32,10 +32,11 @@ class LetAgentsDYORApp extends StatelessWidget {
           secondary: Color(0xFFA0AEC0),
         ),
         textTheme: GoogleFonts.soraTextTheme(),
-        cardTheme: CardTheme(
-          color: const Color(0xFF262b33),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        cardTheme: const CardThemeData(
+          color: Color(0xFF262b33),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+          ),
           elevation: 4,
           shadowColor: Colors.black54,
         ),
