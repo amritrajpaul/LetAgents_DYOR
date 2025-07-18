@@ -1,44 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'models/dashboard_models.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({super.key});
 
-  final Map<String, List<Map<String, String>>> _teams = {
-    'Analyst': [
-      {'agent': 'Alice', 'role': 'Lead', 'status': 'Completed'},
-      {'agent': 'Bob', 'role': 'Analyst', 'status': 'In Progress'},
-    ],
-    'Research': [
-      {'agent': 'Eve', 'role': 'Lead', 'status': 'Pending'},
-    ],
-    'Trading': [
-      {'agent': 'Charlie', 'role': 'Trader', 'status': 'Completed'},
-    ],
-    'Risk Management': [
-      {'agent': 'Dave', 'role': 'Manager', 'status': 'In Progress'},
-    ],
-    'Portfolio': [
-      {'agent': 'Mallory', 'role': 'Advisor', 'status': 'Pending'},
-    ],
-  };
+  final List<Team> _teams = const [
+    Team(name: 'Analyst', members: [
+      TeamMember(agent: 'Alice', role: 'Lead', status: 'Completed'),
+      TeamMember(agent: 'Bob', role: 'Analyst', status: 'In Progress'),
+    ]),
+    Team(name: 'Research', members: [
+      TeamMember(agent: 'Eve', role: 'Lead', status: 'Pending'),
+    ]),
+    Team(name: 'Trading', members: [
+      TeamMember(agent: 'Charlie', role: 'Trader', status: 'Completed'),
+    ]),
+    Team(name: 'Risk Management', members: [
+      TeamMember(agent: 'Dave', role: 'Manager', status: 'In Progress'),
+    ]),
+    Team(name: 'Portfolio', members: [
+      TeamMember(agent: 'Mallory', role: 'Advisor', status: 'Pending'),
+    ]),
+  ];
 
-  final List<Map<String, String>> _logs = [
-    {
-      'time': '09:00',
-      'type': 'Tool',
-      'content': 'Fetched market data'
-    },
-    {
-      'time': '09:05',
-      'type': 'Reasoning',
-      'content': 'Analyzed momentum signals'
-    },
-    {
-      'time': '09:10',
-      'type': 'Tool',
-      'content': 'Calculated RSI'
-    },
+  final List<LogEntry> _logs = const [
+    LogEntry(time: '09:00', type: 'Tool', content: 'Fetched market data'),
+    LogEntry(time: '09:05', type: 'Reasoning', content: 'Analyzed momentum signals'),
+    LogEntry(time: '09:10', type: 'Tool', content: 'Calculated RSI'),
   ];
 
   Color _statusColor(String status) {
@@ -139,15 +128,15 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            ..._teams.entries.map(
-              (e) => ExpansionTile(
-                title: Text(e.key),
-                children: e.value
+            ..._teams.map(
+              (team) => ExpansionTile(
+                title: Text(team.name),
+                children: team.members
                     .map(
                       (m) => ListTile(
-                        title: Text(m['agent']!),
-                        subtitle: Text(m['role']!),
-                        trailing: _buildStatusChip(m['status']!),
+                        title: Text(m.agent),
+                        subtitle: Text(m.role),
+                        trailing: _buildStatusChip(m.status),
                       ),
                     )
                     .toList(),
@@ -175,7 +164,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             ..._logs.map((log) {
-              final typeColor = log['type'] == 'Tool'
+              final typeColor = log.type == 'Tool'
                   ? const Color(0xFF3B82F6)
                   : const Color(0xFFA78BFA);
               return Padding(
@@ -190,7 +179,7 @@ class DashboardScreen extends StatelessWidget {
                         color: const Color(0xFF374151),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(log['time']!,
+                      child: Text(log.time,
                           style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1))),
                     ),
                     const SizedBox(width: 8),
@@ -201,13 +190,13 @@ class DashboardScreen extends StatelessWidget {
                         color: typeColor,
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(log['type']!,
+                      child: Text(log.type,
                           style: const TextStyle(fontSize: 12, color: Colors.white)),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        log['content']!,
+                        log.content,
                         style: const TextStyle(fontFamily: 'monospace'),
                       ),
                     ),
