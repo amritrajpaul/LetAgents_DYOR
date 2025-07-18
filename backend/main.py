@@ -78,6 +78,10 @@ class AnalyzeRequest(BaseModel):
     date: str
     research_depth: int = 1
     analysts: Optional[List[str]] = None
+    llm_provider: Optional[str] = None
+    backend_url: Optional[str] = None
+    quick_model: Optional[str] = None
+    deep_model: Optional[str] = None
 
 
 class UserCreate(BaseModel):
@@ -150,6 +154,14 @@ def analyze(
         config = DEFAULT_CONFIG.copy()
         config["max_debate_rounds"] = request.research_depth
         config["max_risk_discuss_rounds"] = request.research_depth
+        if request.llm_provider is not None:
+            config["llm_provider"] = request.llm_provider
+        if request.backend_url is not None:
+            config["backend_url"] = request.backend_url
+        if request.quick_model is not None:
+            config["quick_think_llm"] = request.quick_model
+        if request.deep_model is not None:
+            config["deep_think_llm"] = request.deep_model
 
         # Initialize graph with selected analysts (if provided)
         graph = TradingAgentsGraph(
@@ -199,6 +211,14 @@ def analyze_stream(
             config = DEFAULT_CONFIG.copy()
             config["max_debate_rounds"] = request.research_depth
             config["max_risk_discuss_rounds"] = request.research_depth
+            if request.llm_provider is not None:
+                config["llm_provider"] = request.llm_provider
+            if request.backend_url is not None:
+                config["backend_url"] = request.backend_url
+            if request.quick_model is not None:
+                config["quick_think_llm"] = request.quick_model
+            if request.deep_model is not None:
+                config["deep_think_llm"] = request.deep_model
 
             graph = TradingAgentsGraph(
                 request.analysts or ["market", "social", "news", "fundamentals"],

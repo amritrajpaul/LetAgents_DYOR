@@ -23,6 +23,83 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final _tickerController = TextEditingController();
   final _dateController = TextEditingController();
 
+  // Advanced settings
+  double _researchDepth = 1;
+  final Map<String, String> _providerUrls = const {
+    'OpenAI': 'https://api.openai.com/v1',
+    'Anthropic': 'https://api.anthropic.com/',
+    'Google': 'https://generativelanguage.googleapis.com/v1',
+    'Openrouter': 'https://openrouter.ai/api/v1',
+    'Ollama': 'http://localhost:11434/v1',
+  };
+  final Map<String, List<String>> _quickModels = const {
+    'OpenAI': ['gpt-4o-mini', 'gpt-4.1-nano', 'gpt-4.1-mini', 'gpt-4o'],
+    'Anthropic': [
+      'claude-3-5-haiku-latest',
+      'claude-3-5-sonnet-latest',
+      'claude-3-7-sonnet-latest',
+      'claude-sonnet-4-0'
+    ],
+    'Google': [
+      'gemini-2.0-flash-lite',
+      'gemini-2.0-flash',
+      'gemini-2.5-flash-preview-05-20'
+    ],
+    'Openrouter': [
+      'meta-llama/llama-4-scout:free',
+      'meta-llama/llama-3.3-8b-instruct:free',
+      'google/gemini-2.0-flash-exp:free'
+    ],
+    'Ollama': ['llama3.1', 'llama3.2'],
+  };
+  final Map<String, List<String>> _deepModels = const {
+    'OpenAI': [
+      'gpt-4.1-nano',
+      'gpt-4.1-mini',
+      'gpt-4o',
+      'o4-mini',
+      'o3-mini',
+      'o3',
+      'o1'
+    ],
+    'Anthropic': [
+      'claude-3-5-haiku-latest',
+      'claude-3-5-sonnet-latest',
+      'claude-3-7-sonnet-latest',
+      'claude-sonnet-4-0',
+      'claude-opus-4-0'
+    ],
+    'Google': [
+      'gemini-2.0-flash-lite',
+      'gemini-2.0-flash',
+      'gemini-2.5-flash-preview-05-20',
+      'gemini-2.5-pro-preview-06-05'
+    ],
+    'Openrouter': [
+      'deepseek/deepseek-chat-v3-0324:free',
+      'deepseek/deepseek-chat-v3-0324:free'
+    ],
+    'Ollama': ['llama3.1', 'qwen3'],
+  };
+  String _selectedProvider = 'OpenAI';
+  late String _backendUrl;
+  late String _quickModel;
+  late String _deepModel;
+  final Map<String, bool> _analysts = {
+    'market': true,
+    'social': true,
+    'news': true,
+    'fundamentals': true,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _backendUrl = _providerUrls[_selectedProvider]!;
+    _quickModel = _quickModels[_selectedProvider]!.first;
+    _deepModel = _deepModels[_selectedProvider]!.first;
+  }
+
   bool _loading = false;
   double _progress = 0;
   String? _error;
@@ -89,7 +166,19 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${AuthService.token}',
         })
-        ..body = jsonEncode({'ticker': ticker, 'date': date});
+        ..body = jsonEncode({
+          'ticker': ticker,
+          'date': date,
+          'research_depth': _researchDepth.round(),
+          'analysts': _analysts.entries
+              .where((e) => e.value)
+              .map((e) => e.key)
+              .toList(),
+          'llm_provider': _selectedProvider.toLowerCase(),
+          'backend_url': _backendUrl,
+          'quick_model': _quickModel,
+          'deep_model': _deepModel,
+        });
 
       final response = await client.send(request);
       if (response.statusCode != 200) {
@@ -247,6 +336,79 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               decoration: const InputDecoration(labelText: 'Date (YYYY-MM-DD)'),
               readOnly: true,
               onTap: _pickDate,
+            ),
+            const SizedBox(height: 16),
+            ExpansionTile(
+              title: const Text('Advanced Settings'),
+              childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
+              children: [
+                Row(
+                  children: [
+                    Text('Debate Rounds: ${_researchDepth.round()}'),
+                    Expanded(
+                      child: Slider(
+                        value: _researchDepth,
+                        min: 1,
+                        max: 5,
+                        divisions: 4,
+                        label: _researchDepth.round().toString(),
+                        onChanged: (v) => setState(() => _researchDepth = v),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                DropdownButton<String>(
+                  value: _selectedProvider,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _selectedProvider = value;
+                      _backendUrl = _providerUrls[value]!;
+                      _quickModel = _quickModels[value]!.first;
+                      _deepModel = _deepModels[value]!.first;
+                    });
+                  },
+                  items: _providerUrls.keys
+                      .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                      .toList(),
+                ),
+                const SizedBox(height: 8),
+                DropdownButton<String>(
+                  value: _quickModel,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _quickModel = value);
+                    }
+                  },
+                  items: _quickModels[_selectedProvider]!
+                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                      .toList(),
+                ),
+                const SizedBox(height: 8),
+                DropdownButton<String>(
+                  value: _deepModel,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _deepModel = value);
+                    }
+                  },
+                  items: _deepModels[_selectedProvider]!
+                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                      .toList(),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: _analysts.keys.map((a) {
+                    return FilterChip(
+                      label: Text(a[0].toUpperCase() + a.substring(1)),
+                      selected: _analysts[a]!,
+                      onSelected: (v) => setState(() => _analysts[a] = v),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             if (_error != null) ...[
