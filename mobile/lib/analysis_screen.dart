@@ -7,6 +7,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'login_screen.dart';
 import 'history_screen.dart';
+import 'analysis_result_page.dart';
 import 'services/auth_service.dart';
 import 'ticker_utils.dart';
 import 'data_availability.dart';
@@ -129,6 +130,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Future<void> _analyze() async {
     _analysisFuture = _runAnalysis();
     await _analysisFuture;
+    if (!mounted || _stopRequested) return;
+    final data = {
+      'decision': _decision,
+      'report': _parsedReport,
+      'availability': {
+        'macro_news': _availability.macroNews,
+        'analyst_breakdown': _availability.analystBreakdown,
+        'risk_assessment': _availability.riskAssessment,
+        'bullish_momentum': _availability.bullishMomentum,
+        'inflow_up': _availability.inflowUp,
+      },
+      'messages': List<String>.from(_messages),
+    };
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AnalysisResultPage(analysisData: data),
+      ),
+    );
   }
 
   void _stopAnalysis() {
@@ -305,10 +324,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildInputPanel(),
-                  const SizedBox(height: 16),
-                  _buildHighlights(),
-                  const SizedBox(height: 16),
-                  _buildInsightSections(),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -317,21 +332,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
           return Stack(
             children: [
-              isWide
-                  ? Row(
-                      children: [
-                        Expanded(child: content),
-                        if (_decision != null) _buildRecommendationBanner(),
-                      ],
-                    )
-                  : content,
-              if (!isWide && _decision != null)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: _buildRecommendationBanner(),
-                ),
+              isWide ? Row(children: [Expanded(child: content)]) : content,
             ],
           );
         },
@@ -457,10 +458,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   child: const Text('Analyze'),
                 ),
               ),
-            if (_messages.isNotEmpty) ...[
-              const SizedBox(height: 16),
-              _buildStreamingBox(),
-            ],
           ],
         ),
       ),
@@ -611,43 +608,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Widget _buildStreamingBox() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(8),
-      width: double.infinity,
-
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Center(
-            child: Text(
-              '── Current Report ──',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(height: 8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 200),
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(right: 8),
-                child: MarkdownBody(
-                  data: _messages.join('\n'),
-                  selectable: true,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildRecommendationBanner() {
     return Container(
