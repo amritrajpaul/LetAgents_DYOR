@@ -613,20 +613,38 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   Widget _buildStreamingBox() {
     return Container(
-      constraints: const BoxConstraints(maxHeight: 200),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(8),
+      width: double.infinity,
+
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Scrollbar(
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(8),
-          child: MarkdownBody(
-            data: _messages.join('\n'),
-            selectable: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Center(
+            child: Text(
+              '── Current Report ──',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 200),
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(right: 8),
+                child: MarkdownBody(
+                  data: _messages.join('\n'),
+                  selectable: true,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
