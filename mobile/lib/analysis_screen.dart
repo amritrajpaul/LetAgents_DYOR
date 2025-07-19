@@ -109,6 +109,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   DataAvailability _availability = const DataAvailability.empty();
   Future<void>? _analysisFuture;
   final List<String> _messages = [];
+  http.Client? _activeClient;
+  bool _stopRequested = false;
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -126,6 +128,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Future<void> _analyze() async {
     _analysisFuture = _runAnalysis();
     await _analysisFuture;
+  }
+
+  void _stopAnalysis() {
+    setState(() {
+      _stopRequested = true;
+      _loading = false;
+    });
+    _activeClient?.close();
   }
 
   Future<void> _runAnalysis() async {
@@ -157,10 +167,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _report = null;
       _parsedReport = null;
       _availability = const DataAvailability.empty();
+      _stopRequested = false;
     });
 
+    final client = http.Client();
+    _activeClient = client;
     try {
-      final client = http.Client();
       final request = http.Request('POST', Uri.parse('$backendUrl/analyze/stream'))
         ..headers.addAll({
           'Content-Type': 'application/json',
@@ -195,6 +207,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
       String? currentEvent;
       await for (final line in lines) {
+        if (_stopRequested) {
+          break;
+        }
         if (line.isEmpty) {
           currentEvent = null;
           continue;
@@ -229,11 +244,16 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           });
         }
       }
+      if (_stopRequested) {
+        return;
+      }
     } catch (e) {
       setState(() {
         _error = 'Error: $e';
       });
     } finally {
+      client.close();
+      _activeClient = null;
       if (mounted && _loading) {
         setState(() {
           _loading = false;
@@ -418,15 +438,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               ),
               const SizedBox(height: 12),
             ],
-            _loading
-                ? LinearProgressIndicator(value: _progress)
-                : SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _analyze,
-                      child: const Text('Analyze'),
-                    ),
-                  ),
+            if (_loading) ...[
+              LinearProgressIndicator(value: _progress),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _stopAnalysis,
+                  child: const Text('Stop'),
+                ),
+              ),
+            ] else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _analyze,
+                  child: const Text('Analyze'),
+                ),
+              ),
             if (_messages.isNotEmpty) ...[
               const SizedBox(height: 16),
               ..._messages.map((m) => Text(m)),
