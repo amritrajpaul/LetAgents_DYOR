@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'login_screen.dart';
 import 'history_screen.dart';
@@ -458,7 +459,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               ),
             if (_messages.isNotEmpty) ...[
               const SizedBox(height: 16),
-              ..._messages.map((m) => Text(m)),
+              _buildStreamingBox(),
             ],
           ],
         ),
@@ -495,10 +496,52 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return FutureBuilder<void>(
       future: _analysisFuture,
       builder: (context, snapshot) {
-        if (!_availability.anyPanel || snapshot.connectionState != ConnectionState.done) {
+        if (_parsedReport == null || snapshot.connectionState != ConnectionState.done) {
           return const SizedBox.shrink();
         }
         final panels = <ExpansionPanelRadio>[];
+        if (_parsedReport?['market_report'] != null) {
+          panels.add(
+            ExpansionPanelRadio(
+              value: 'market',
+              headerBuilder: (context, isExpanded) => const ListTile(
+                title: Text('Market Analysis'),
+              ),
+              body: Padding(
+                padding: const EdgeInsets.all(8),
+                child: MarkdownBody(data: _parsedReport!['market_report'] as String),
+              ),
+            ),
+          );
+        }
+        if (_parsedReport?['fundamentals_report'] != null) {
+          panels.add(
+            ExpansionPanelRadio(
+              value: 'fundamentals',
+              headerBuilder: (context, isExpanded) => const ListTile(
+                title: Text('Fundamentals Overview'),
+              ),
+              body: Padding(
+                padding: const EdgeInsets.all(8),
+                child: MarkdownBody(data: _parsedReport!['fundamentals_report'] as String),
+              ),
+            ),
+          );
+        }
+        if (_parsedReport?['sentiment_report'] != null) {
+          panels.add(
+            ExpansionPanelRadio(
+              value: 'sentiment',
+              headerBuilder: (context, isExpanded) => const ListTile(
+                title: Text('Sentiment Summary'),
+              ),
+              body: Padding(
+                padding: const EdgeInsets.all(8),
+                child: MarkdownBody(data: _parsedReport!['sentiment_report'] as String),
+              ),
+            ),
+          );
+        }
         if (_availability.macroNews && _parsedReport?['news_report'] != null) {
           panels.add(
             ExpansionPanelRadio(
@@ -508,7 +551,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               ),
               body: Padding(
                 padding: const EdgeInsets.all(8),
-                child: SelectableText(_parsedReport!['news_report'] as String),
+                child: MarkdownBody(data: _parsedReport!['news_report'] as String),
               ),
             ),
           );
@@ -523,8 +566,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               ),
               body: Padding(
                 padding: const EdgeInsets.all(8),
-                child: SelectableText(
-                    _parsedReport!['investment_debate_state']['history'] as String),
+                child: MarkdownBody(
+                    data: _parsedReport!['investment_debate_state']['history'] as String),
               ),
             ),
           );
@@ -539,8 +582,25 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               ),
               body: Padding(
                 padding: const EdgeInsets.all(8),
-                child: SelectableText(
-                    _parsedReport!['risk_debate_state']['history'] as String),
+                child: MarkdownBody(
+                    data: _parsedReport!['risk_debate_state']['history'] as String),
+              ),
+            ),
+          );
+        }
+        if (_parsedReport?['final_trade_decision'] != null) {
+          panels.add(
+            ExpansionPanelRadio(
+              value: 'final',
+              headerBuilder: (context, isExpanded) => const ListTile(
+                title: Text('Final Trade Decision'),
+              ),
+              body: Container(
+                padding: const EdgeInsets.all(8),
+                color: Colors.lightGreen.shade50,
+                child: MarkdownBody(
+                  data: '**FINAL TRANSACTION PROPOSAL**\n\n${_parsedReport!['final_trade_decision']}',
+                ),
               ),
             ),
           );
@@ -548,6 +608,43 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         if (panels.isEmpty) return const SizedBox.shrink();
         return ExpansionPanelList.radio(children: panels);
       },
+    );
+  }
+
+  Widget _buildStreamingBox() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(8),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Center(
+            child: Text(
+              '── Current Report ──',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 200),
+            child: Scrollbar(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(right: 8),
+                child: MarkdownBody(
+                  data: _messages.join('\n'),
+                  selectable: true,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
