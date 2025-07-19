@@ -135,7 +135,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _stopRequested = true;
       _loading = false;
     });
-    _activeClient?.close();
   }
 
   Future<void> _runAnalysis() async {
@@ -248,15 +247,22 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         return;
       }
     } catch (e) {
-      setState(() {
-        _error = 'Error: $e';
-      });
+      if (!(_stopRequested && e is http.ClientException)) {
+        setState(() {
+          _error = 'Error: $e';
+        });
+      }
     } finally {
       client.close();
       _activeClient = null;
       if (mounted && _loading) {
         setState(() {
           _loading = false;
+        });
+      }
+      if (_stopRequested) {
+        setState(() {
+          _messages.add('Analysis canceled');
         });
       }
     }
