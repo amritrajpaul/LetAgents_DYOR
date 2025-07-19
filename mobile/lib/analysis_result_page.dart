@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'data_availability.dart';
 
+
 /// Displays results from an analysis run.
 class AnalysisResultPage extends StatelessWidget {
   /// Raw analysis data to display.
@@ -43,6 +44,7 @@ class AnalysisResultPage extends StatelessWidget {
         ),
       ),
     );
+
 
     return Scaffold(
       appBar: AppBar(
