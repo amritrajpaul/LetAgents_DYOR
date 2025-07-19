@@ -616,6 +616,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 8),
       padding: const EdgeInsets.all(8),
       width: double.infinity,
+
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(8),
