@@ -8,7 +8,8 @@ plugins {
 android {
     namespace = "com.example.letagentsdyor_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Use the NDK version required by the Flutter plugin to avoid build issues
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
