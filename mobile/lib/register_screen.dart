@@ -16,8 +16,6 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _openaiKeyController = TextEditingController();
-  final _finnhubKeyController = TextEditingController();
   bool _loading = false;
   String? _error;
   String? _success;
@@ -36,8 +34,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         body: jsonEncode({
           'email': _emailController.text,
           'password': _passwordController.text,
-          'openai_api_key': _openaiKeyController.text,
-          'finnhub_api_key': _finnhubKeyController.text,
         }),
       );
       if (response.statusCode == 200) {
@@ -78,16 +74,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _passwordController,
                 decoration: const InputDecoration(labelText: 'Password'),
                 obscureText: true,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _openaiKeyController,
-                decoration: const InputDecoration(labelText: 'OpenAI API Key'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _finnhubKeyController,
-                decoration: const InputDecoration(labelText: 'Finnhub API Key'),
               ),
               const SizedBox(height: 16),
               if (_error != null)

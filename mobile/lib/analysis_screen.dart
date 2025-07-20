@@ -7,6 +7,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'login_screen.dart';
 import 'history_screen.dart';
+import 'profile_screen.dart';
 import 'services/auth_service.dart';
 import 'ticker_utils.dart';
 import 'data_availability.dart';
@@ -98,6 +99,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     _backendUrl = _providerUrls[_selectedProvider]!;
     _quickModel = _quickModels[_selectedProvider]!.first;
     _deepModel = _deepModels[_selectedProvider]!.first;
+    _checkKeys();
   }
 
   bool _loading = false;
@@ -111,6 +113,43 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final List<String> _messages = [];
   http.Client? _activeClient;
   bool _stopRequested = false;
+  bool _keysSet = false;
+
+  Future<void> _checkKeys() async {
+    try {
+      final resp = await http.get(
+        Uri.parse('$backendUrl/me'),
+        headers: {'Authorization': 'Bearer ${AuthService.token}'},
+      );
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        _keysSet = (data['openai_api_key'] ?? '').toString().isNotEmpty &&
+            (data['finnhub_api_key'] ?? '').toString().isNotEmpty;
+        if (!_keysSet && mounted) {
+          await showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text('API keys required'),
+              content: const Text('Please set your API keys before analyzing.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProfileScreen(),
+                      ),
+                    );
+                  },
+                  child: const Text('Set Keys'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (_) {}
+  }
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -141,6 +180,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Future<void> _runAnalysis() async {
     final ticker = _tickerController.text.trim().toUpperCase();
     final date = _dateController.text.trim();
+
+    if (!_keysSet) {
+      await _checkKeys();
+      if (!_keysSet) return;
+    }
 
     if (ticker.isEmpty || date.isEmpty) {
       setState(() {
@@ -275,24 +319,40 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Trading Agents'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const HistoryScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.history),
-            tooltip: 'History',
-          ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-          ),
-        ],
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.cyan),
+              child: Text('Menu'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profile'),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('History'),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: _logout,
+            ),
+          ],
+        ),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
