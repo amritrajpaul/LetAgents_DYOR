@@ -5,10 +5,10 @@ This document outlines the high-level design of **LetAgents_DYOR** so future dev
 ## Directory Layout
 
 ```
-backend/       FastAPI application exposing REST endpoints
-mobile/        Flutter app that consumes the backend
-tradingagents/ Core multi-agent trading framework
-cli/           Command line interface built on the trading framework
+backend/        FastAPI application exposing REST endpoints
+mobile/         Flutter app that consumes the backend
+tradingagents/  Core multi-agent trading framework
+cli/            Command line interface built on the trading framework
 ```
 
 Results produced by the agents are saved under `results/` and images used by the app live in `assets/`.
