@@ -8,6 +8,8 @@ LetAgents_DYOR ("Do Your Own Research") aims to make stock insights accessible f
 
 LetAgents_DYOR orchestrates multiple AI agents to help you analyze equities with depth and speed. The backend offers a simple REST interface while the front-end Flutter app provides an intuitive experience on both Android and iOS. This project is currently deployed on the free tier of Oracle Cloud Infrastructure (OCI).
 
+For details on how the agents work together, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ## 📱 Features
 
 - Intelligent multi-agent analysis for stocks
@@ -83,7 +85,7 @@ LetAgents_DYOR/
 
 ## 💡 Vision & Roadmap
 
-The goal is to become a full-fledged B2C financial insight app that leverages agentic AI workflows and a scalable cloud backend. Future plans include:
+The goal is to become a full-fledged B2C financial insight app powered by a multi-agent trading framework that mirrors the operations of real-world trading firms. Future plans include:
 
 - Support for more market data providers (Yahoo Finance, Alpha Vantage, etc.)
 - Portfolio tracking and personalized insights
