@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'login_screen.dart';
-
-const String backendUrl = 'http://localhost:8000';
+import 'config.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

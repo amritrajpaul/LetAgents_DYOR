@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'services/auth_service.dart';
-
-const String backendUrl = 'http://localhost:8000';
+import 'config.dart';
 
 class AnalysisDetailScreen extends StatefulWidget {
   final int recordId;

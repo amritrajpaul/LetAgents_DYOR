@@ -6,8 +6,7 @@ import 'package:http/http.dart' as http;
 import 'analysis_screen.dart';
 import 'register_screen.dart';
 import 'services/auth_service.dart';
-
-const String backendUrl = 'http://localhost:8000';
+import 'config.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

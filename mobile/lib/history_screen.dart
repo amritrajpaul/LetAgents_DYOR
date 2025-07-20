@@ -5,8 +5,7 @@ import 'package:http/http.dart' as http;
 
 import 'analysis_detail_screen.dart';
 import 'services/auth_service.dart';
-
-const String backendUrl = 'http://localhost:8000';
+import 'config.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
