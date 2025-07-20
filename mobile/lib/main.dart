@@ -5,6 +5,7 @@ import 'history_screen.dart';
 import 'login_screen.dart';
 import 'register_screen.dart';
 import 'services/auth_service.dart';
+import 'profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,7 @@ class LetAgentsDYORApp extends StatelessWidget {
         '/register': (_) => const RegisterScreen(),
         '/analysis': (_) => const AnalysisScreen(),
         '/history': (_) => const HistoryScreen(),
+        '/profile': (_) => const ProfileScreen(),
       },
     );
   }

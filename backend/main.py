@@ -57,10 +57,14 @@ def get_current_user(
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: int = payload.get("id")
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
     return user
 
 
@@ -87,13 +91,18 @@ class AnalyzeRequest(BaseModel):
 class UserCreate(BaseModel):
     email: str
     password: str
-    openai_api_key: str
-    finnhub_api_key: str
+    openai_api_key: Optional[str] = None
+    finnhub_api_key: Optional[str] = None
 
 
 class UserLogin(BaseModel):
     email: str
     password: str
+
+
+class UpdateKeys(BaseModel):
+    openai_api_key: Optional[str] = None
+    finnhub_api_key: Optional[str] = None
 
 
 def compute_data_availability(state: dict) -> dict:
@@ -135,9 +144,36 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 def login(credentials: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
     if not user or not verify_password(credentials.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
     token = create_access_token({"id": user.id, "email": user.email})
     return {"token": token}
+
+
+@app.get("/me")
+def read_profile(current_user: User = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "openai_api_key": current_user.openai_api_key,
+        "finnhub_api_key": current_user.finnhub_api_key,
+    }
+
+
+@app.put("/keys")
+def update_keys(
+    update: UpdateKeys,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if update.openai_api_key is not None:
+        current_user.openai_api_key = update.openai_api_key
+    if update.finnhub_api_key is not None:
+        current_user.finnhub_api_key = update.finnhub_api_key
+    db.commit()
+    db.refresh(current_user)
+    return {"status": "ok"}
 
 
 @app.post("/analyze")
@@ -147,6 +183,9 @@ def analyze(
     db: Session = Depends(get_db),
 ):
     """Run the TradingAgents analysis and return the results."""
+
+    if not current_user.openai_api_key or not current_user.finnhub_api_key:
+        raise HTTPException(status_code=400, detail="API keys not configured")
 
     try:
 
@@ -186,9 +225,7 @@ def analyze(
         db.commit()
         db.refresh(record)
 
-        serialized_report = json.loads(
-            json.dumps(final_state, default=_serialize_obj)
-        )
+        serialized_report = json.loads(json.dumps(final_state, default=_serialize_obj))
         return {
             "ticker": request.ticker,
             "date": request.date,
@@ -207,6 +244,9 @@ def analyze_stream(
     db: Session = Depends(get_db),
 ):
     """Stream progress of TradingAgents analysis via SSE."""
+
+    if not current_user.openai_api_key or not current_user.finnhub_api_key:
+        raise HTTPException(status_code=400, detail="API keys not configured")
 
     def event_generator():
         try:
@@ -251,7 +291,6 @@ def analyze_stream(
                         data=json.dumps({"message": message}),
                     )
 
-
             if last_state is None:
                 raise RuntimeError("Analysis produced no output")
 
@@ -280,9 +319,7 @@ def analyze_stream(
                         "date": request.date,
                         "decision": decision,
                         "report": serialized_report,
-                        "availability": compute_data_availability(
-                            serialized_report
-                        ),
+                        "availability": compute_data_availability(serialized_report),
                     }
                 ),
             )
@@ -296,7 +333,9 @@ def analyze_stream(
 
 
 @app.get("/history")
-def history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def history(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     """Return a list of previous analyses for the authenticated user."""
     records = (
         db.query(AnalysisRecord)
@@ -324,14 +363,17 @@ def history_detail(
     """Return full details of a past analysis."""
     record = db.query(AnalysisRecord).filter(AnalysisRecord.id == record_id).first()
     if not record or record.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Record not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Record not found"
+        )
     return {
         "id": record.id,
         "ticker": record.ticker,
         "date": record.date,
         "decision": record.decision,
-"report": json.loads(record.full_report),
+        "report": json.loads(record.full_report),
     }
+
 
 # To run locally:
 # uvicorn backend.main:app --host 0.0.0.0 --port 8000
