@@ -10,8 +10,7 @@ import 'history_screen.dart';
 import 'services/auth_service.dart';
 import 'ticker_utils.dart';
 import 'data_availability.dart';
-
-const String backendUrl = 'http://localhost:8000';
+import 'config.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});

@@ -53,8 +53,9 @@ LetAgents_DYOR orchestrates multiple AI agents to help you analyze equities with
    ```bash
    cd ../mobile
    flutter pub get
-   flutter run
+   flutter run --dart-define=BACKEND_URL=http://<your-ip>:8000
    ```
+   Replace `<your-ip>` with the machine running the backend when testing on a real device.
 
 ## 🧑‍💻 Developer Guide
 
