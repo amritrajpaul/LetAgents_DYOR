@@ -1,6 +1,6 @@
 # Architecture Overview
 
-This document outlines the high level design of **LetAgents_DYOR** so future developers and AI agents can quickly understand how the pieces fit together.
+This document outlines the high-level design of **LetAgents_DYOR** so future developers and AI agents can quickly understand how the pieces fit together.
 
 ## Directory Layout
 
