@@ -55,7 +55,7 @@ LetAgents_DYOR orchestrates multiple AI agents to help you analyze equities with
    flutter pub get
    flutter run --dart-define=BACKEND_URL=http://<your-ip>:8000
    ```
-   Replace `<your-ip>` with the machine running the backend when testing on a real device.
+Replace `<your-ip>` with the backend host. Use `localhost` for the iOS Simulator, `10.0.2.2` for the Android Emulator, or your computer's network IP for a physical device.
 
 ## 🧑‍💻 Developer Guide
 
