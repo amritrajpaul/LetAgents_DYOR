@@ -13,6 +13,9 @@ class AnalysisRecord(Base):
     date = Column(String, nullable=False)
     decision = Column(Text, nullable=False)
     full_report = Column(Text, nullable=False)
+    tool_calls = Column(Integer, default=0)
+    llm_calls = Column(Integer, default=0)
+    reports_generated = Column(Integer, default=0)
 
 
 class User(Base):

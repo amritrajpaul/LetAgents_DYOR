@@ -75,9 +75,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         final item = _records[index] as Map<String, dynamic>;
                         final title = '${item['ticker']} on ${item['date']}';
                         final subtitle = (item['decision'] ?? '').toString();
+                        final m = item['metrics'] as Map<String, dynamic>?;
+                        final metricsText = m == null ? '' : ' | Tools: ' + m['tool_calls'].toString() + '  LLM: ' + m['llm_calls'].toString() + '  Reports: ' + m['reports'].toString();
                         return ListTile(
                           title: Text(title),
-                          subtitle: Text(subtitle),
+                          subtitle: Text(subtitle + metricsText),
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
