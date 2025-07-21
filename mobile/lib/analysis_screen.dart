@@ -111,6 +111,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   DataAvailability _availability = const DataAvailability.empty();
   Future<void>? _analysisFuture;
   final List<String> _messages = [];
+  int _toolCalls = 0;
+  int _llmCalls = 0;
+  int _reportsGenerated = 0;
   http.Client? _activeClient;
   bool _stopRequested = false;
   bool _keysSet = false;
@@ -205,10 +208,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
     _tickerController.text = ticker;
 
-    setState(() {
+  setState(() {
       _loading = true;
       _progress = 0;
       _messages.clear();
+      _toolCalls = 0;
+      _llmCalls = 0;
+      _reportsGenerated = 0;
       _error = null;
       _decision = null;
       _report = null;
@@ -271,6 +277,9 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             if (event == 'update') {
               _progress = (_progress + 0.05).clamp(0.0, 0.9);
               _messages.add(data['message']?.toString() ?? '');
+              _toolCalls = data['tool_calls'] ?? _toolCalls;
+              _llmCalls = data['llm_calls'] ?? _llmCalls;
+              _reportsGenerated = data['reports'] ?? _reportsGenerated;
             } else if (event == 'complete') {
               _progress = 1.0;
               _decision = data['decision']?.toString();
@@ -280,6 +289,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   ? DataAvailability.fromJson(
                       data['availability'] as Map<String, dynamic>)
                   : const DataAvailability.empty();
+              if (data.containsKey('metrics')) {
+                final m = data['metrics'] as Map<String, dynamic>;
+                _toolCalls = m['tool_calls'] ?? _toolCalls;
+                _llmCalls = m['llm_calls'] ?? _llmCalls;
+                _reportsGenerated = m['reports'] ?? _reportsGenerated;
+              }
               _loading = false;
             } else if (event == 'error') {
               _error = data['detail']?.toString();
@@ -698,6 +713,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 ),
               ),
             ),
+          const SizedBox(height: 8),
+          Text(
+            "Tool Calls: $_toolCalls  |  LLM Calls: $_llmCalls  |  Reports: $_reportsGenerated",
+            textAlign: TextAlign.center,
           ),
         ],
       ),

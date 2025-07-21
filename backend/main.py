@@ -118,6 +118,34 @@ def compute_data_availability(state: dict) -> dict:
     }
 
 
+def compute_metrics(state: dict) -> dict:
+    """Return counts for tool calls, LLM calls and generated reports."""
+    messages = state.get("messages", [])
+    llm_calls = max(len(messages) - 1, 0)
+    tool_calls = 0
+    for msg in messages:
+        if hasattr(msg, "tool_calls"):
+            tool_calls += len(msg.tool_calls)
+        elif isinstance(msg, dict) and msg.get("tool_calls"):
+            tool_calls += len(msg["tool_calls"])
+
+    report_keys = [
+        "market_report",
+        "fundamentals_report",
+        "sentiment_report",
+        "news_report",
+        "investment_plan",
+        "trader_investment_plan",
+        "final_trade_decision",
+    ]
+    reports_generated = sum(1 for k in report_keys if state.get(k))
+    return {
+        "tool_calls": tool_calls,
+        "llm_calls": llm_calls,
+        "reports": reports_generated,
+    }
+
+
 @app.get("/")
 def read_root():
     """Health check route."""
@@ -213,6 +241,8 @@ def analyze(
 
         final_state, decision = graph.propagate(request.ticker, request.date)
 
+        metrics = compute_metrics(final_state)
+
         # Persist the result
         record = AnalysisRecord(
             user_id=current_user.id,
@@ -220,6 +250,9 @@ def analyze(
             date=request.date,
             decision=decision,
             full_report=json.dumps(final_state, default=_serialize_obj),
+            tool_calls=metrics["tool_calls"],
+            llm_calls=metrics["llm_calls"],
+            reports_generated=metrics["reports"],
         )
         db.add(record)
         db.commit()
@@ -232,6 +265,7 @@ def analyze(
             "decision": decision,
             "report": serialized_report,
             "availability": compute_data_availability(serialized_report),
+            "metrics": metrics,
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -276,20 +310,54 @@ def analyze_stream(
             )
             args = graph.propagator.get_graph_args()
             last_state = None
+            tool_calls = 0
+            llm_calls = 0
+            reports_generated = 0
+            seen_messages = 0
+            seen_reports = set()
+            report_keys = [
+                "market_report",
+                "fundamentals_report",
+                "sentiment_report",
+                "news_report",
+                "investment_plan",
+                "trader_investment_plan",
+                "final_trade_decision",
+            ]
+
             for chunk in graph.graph.stream(init_state, **args):
                 last_state = chunk
                 if chunk.get("messages"):
-                    msg_obj = chunk["messages"][-1]
-                    if hasattr(msg_obj, "content"):
-                        message = msg_obj.content
-                    elif isinstance(msg_obj, dict):
-                        message = json.dumps(msg_obj)
-                    else:
-                        message = str(msg_obj)
-                    yield ServerSentEvent(
-                        event="update",
-                        data=json.dumps({"message": message}),
-                    )
+                    new_messages = chunk["messages"][seen_messages:]
+                    seen_messages = len(chunk["messages"])
+                    for msg_obj in new_messages:
+                        if hasattr(msg_obj, "content"):
+                            message = msg_obj.content
+                        elif isinstance(msg_obj, dict):
+                            message = json.dumps(msg_obj)
+                        else:
+                            message = str(msg_obj)
+                        if hasattr(msg_obj, "tool_calls"):
+                            tool_calls += len(msg_obj.tool_calls)
+                        elif isinstance(msg_obj, dict) and msg_obj.get("tool_calls"):
+                            tool_calls += len(msg_obj["tool_calls"])
+                        llm_calls += 1
+                        yield ServerSentEvent(
+                            event="update",
+                            data=json.dumps(
+                                {
+                                    "message": message,
+                                    "tool_calls": tool_calls,
+                                    "llm_calls": llm_calls,
+                                    "reports": reports_generated,
+                                }
+                            ),
+                        )
+
+                for key in report_keys:
+                    if chunk.get(key) and key not in seen_reports:
+                        reports_generated += 1
+                        seen_reports.add(key)
 
             if last_state is None:
                 raise RuntimeError("Analysis produced no output")
@@ -303,6 +371,9 @@ def analyze_stream(
                 date=request.date,
                 decision=decision,
                 full_report=json.dumps(final_state, default=_serialize_obj),
+                tool_calls=tool_calls,
+                llm_calls=llm_calls,
+                reports_generated=reports_generated,
             )
             db.add(record)
             db.commit()
@@ -320,6 +391,11 @@ def analyze_stream(
                         "decision": decision,
                         "report": serialized_report,
                         "availability": compute_data_availability(serialized_report),
+                        "metrics": {
+                            "tool_calls": tool_calls,
+                            "llm_calls": llm_calls,
+                            "reports": reports_generated,
+                        },
                     }
                 ),
             )
@@ -349,6 +425,11 @@ def history(
             "ticker": r.ticker,
             "date": r.date,
             "decision": r.decision,
+            "metrics": {
+                "tool_calls": r.tool_calls,
+                "llm_calls": r.llm_calls,
+                "reports": r.reports_generated,
+            },
         }
         for r in records
     ]
@@ -372,6 +453,11 @@ def history_detail(
         "date": record.date,
         "decision": record.decision,
         "report": json.loads(record.full_report),
+        "metrics": {
+            "tool_calls": record.tool_calls,
+            "llm_calls": record.llm_calls,
+            "reports": record.reports_generated,
+        },
     }
 
 
