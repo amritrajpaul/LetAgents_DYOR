@@ -709,6 +709,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Widget _buildRecommendationBanner() {
+    final trigger = _parsedReport?['trigger']?.toString();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -727,17 +728,19 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             'Suggested Action: ${_decision ?? ''}',
             style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
-          const Divider(color: Colors.white54),
-          Row(
-            children: const [
-              Icon(Icons.warning, color: Colors.orange),
-              SizedBox(width: 8),
-              Text(
-                'Trigger: RSI > 70',
-                style: TextStyle(color: Colors.white),
-              ),
-            ],
-          ),
+          if (trigger != null) ...[
+            const Divider(color: Colors.white54),
+            Row(
+              children: [
+                const Icon(Icons.warning, color: Colors.orange),
+                const SizedBox(width: 8),
+                Text(
+                  'Trigger: $trigger',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
