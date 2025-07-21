@@ -114,6 +114,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   http.Client? _activeClient;
   bool _stopRequested = false;
   bool _keysSet = false;
+  List<String> _activeAnalysts = const [];
 
   Future<void> _checkKeys() async {
     try {
@@ -180,6 +181,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Future<void> _runAnalysis() async {
     final ticker = _tickerController.text.trim().toUpperCase();
     final date = _dateController.text.trim();
+    _activeAnalysts =
+        _analysts.entries.where((e) => e.value).map((e) => e.key).toList();
 
     if (!_keysSet) {
       await _checkKeys();
@@ -226,10 +229,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           'ticker': ticker,
           'date': date,
           'research_depth': _researchDepth.round(),
-          'analysts': _analysts.entries
-              .where((e) => e.value)
-              .map((e) => e.key)
-              .toList(),
+          'analysts': _activeAnalysts,
           'llm_provider': _selectedProvider.toLowerCase(),
           'backend_url': _backendUrl,
           'quick_model': _quickModel,
@@ -527,147 +527,143 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Widget _buildHighlights() {
-    return FutureBuilder<void>(
-      future: _analysisFuture,
-      builder: (context, snapshot) {
-        if (!_availability.anyChip || snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox.shrink();
-        }
-        final chips = <Widget>[];
-        if (_availability.bullishMomentum) {
-          chips.add(const Chip(
-              avatar: Icon(Icons.trending_up), label: Text('Bullish Momentum')));
-        }
-        if (_availability.inflowUp) {
-          chips.add(const Chip(
-              avatar: Icon(Icons.attach_money), label: Text('Inflow Up')));
-        }
-        if (_availability.riskAssessment) {
-          chips.add(const Chip(
-              avatar: Icon(Icons.flag), label: Text('Low Risk')));
-        }
-        return Wrap(spacing: 8, children: chips);
-      },
-    );
+    if (!_availability.anyChip) {
+      return const SizedBox.shrink();
+    }
+    final chips = <Widget>[];
+    if (_availability.bullishMomentum) {
+      chips.add(const Chip(
+          avatar: Icon(Icons.trending_up), label: Text('Bullish Momentum')));
+    }
+    if (_availability.inflowUp) {
+      chips.add(
+          const Chip(avatar: Icon(Icons.attach_money), label: Text('Inflow Up')));
+    }
+    if (_availability.riskAssessment) {
+      chips.add(const Chip(avatar: Icon(Icons.flag), label: Text('Low Risk')));
+    }
+    return Wrap(spacing: 8, children: chips);
   }
 
   Widget _buildInsightSections() {
-    return FutureBuilder<void>(
-      future: _analysisFuture,
-      builder: (context, snapshot) {
-        if (_parsedReport == null || snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox.shrink();
-        }
-        final panels = <ExpansionPanelRadio>[];
-        if (_parsedReport?['market_report'] != null) {
-          panels.add(
-            ExpansionPanelRadio(
-              value: 'market',
-              headerBuilder: (context, isExpanded) => const ListTile(
-                title: Text('Market Analysis'),
-              ),
-              body: Padding(
-                padding: const EdgeInsets.all(8),
-                child: MarkdownBody(data: _parsedReport!['market_report'] as String),
-              ),
+    if (_parsedReport == null) {
+      return const SizedBox.shrink();
+    }
+    final panels = <ExpansionPanelRadio>[];
+    if (_parsedReport?['market_report'] != null &&
+        _activeAnalysts.contains('market')) {
+      panels.add(
+        ExpansionPanelRadio(
+          value: 'market',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Market Analysis'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(8),
+            child: MarkdownBody(data: _parsedReport!['market_report'] as String),
+          ),
+        ),
+      );
+    }
+    if (_parsedReport?['fundamentals_report'] != null &&
+        _activeAnalysts.contains('fundamentals')) {
+      panels.add(
+        ExpansionPanelRadio(
+          value: 'fundamentals',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Fundamentals Overview'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(8),
+            child:
+                MarkdownBody(data: _parsedReport!['fundamentals_report'] as String),
+          ),
+        ),
+      );
+    }
+    if (_parsedReport?['sentiment_report'] != null &&
+        _activeAnalysts.contains('social')) {
+      panels.add(
+        ExpansionPanelRadio(
+          value: 'sentiment',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Sentiment Summary'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(8),
+            child:
+                MarkdownBody(data: _parsedReport!['sentiment_report'] as String),
+          ),
+        ),
+      );
+    }
+    if (_availability.macroNews &&
+        _parsedReport?['news_report'] != null &&
+        _activeAnalysts.contains('news')) {
+      panels.add(
+        ExpansionPanelRadio(
+          value: 'news',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Macro & Market News'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(8),
+            child: MarkdownBody(data: _parsedReport!['news_report'] as String),
+          ),
+        ),
+      );
+    }
+    if (_availability.analystBreakdown &&
+        _parsedReport?['investment_debate_state'] != null) {
+      panels.add(
+        ExpansionPanelRadio(
+          value: 'analysts',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Analyst Team Breakdown'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(8),
+            child: MarkdownBody(
+                data: _parsedReport!['investment_debate_state']['history'] as String),
+          ),
+        ),
+      );
+    }
+    if (_availability.riskAssessment &&
+        _parsedReport?['risk_debate_state'] != null) {
+      panels.add(
+        ExpansionPanelRadio(
+          value: 'risk',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Risk Assessment'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(8),
+            child: MarkdownBody(
+                data: _parsedReport!['risk_debate_state']['history'] as String),
+          ),
+        ),
+      );
+    }
+    if (_parsedReport?['final_trade_decision'] != null) {
+      panels.add(
+        ExpansionPanelRadio(
+          value: 'final',
+          headerBuilder: (context, isExpanded) => const ListTile(
+            title: Text('Final Trade Decision'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(8),
+            child: MarkdownBody(
+              data:
+                  '**FINAL TRANSACTION PROPOSAL**\n\n${_parsedReport!['final_trade_decision']}',
             ),
-          );
-        }
-        if (_parsedReport?['fundamentals_report'] != null) {
-          panels.add(
-            ExpansionPanelRadio(
-              value: 'fundamentals',
-              headerBuilder: (context, isExpanded) => const ListTile(
-                title: Text('Fundamentals Overview'),
-              ),
-              body: Padding(
-                padding: const EdgeInsets.all(8),
-                child: MarkdownBody(data: _parsedReport!['fundamentals_report'] as String),
-              ),
-            ),
-          );
-        }
-        if (_parsedReport?['sentiment_report'] != null) {
-          panels.add(
-            ExpansionPanelRadio(
-              value: 'sentiment',
-              headerBuilder: (context, isExpanded) => const ListTile(
-                title: Text('Sentiment Summary'),
-              ),
-              body: Padding(
-                padding: const EdgeInsets.all(8),
-                child: MarkdownBody(data: _parsedReport!['sentiment_report'] as String),
-              ),
-            ),
-          );
-        }
-        if (_availability.macroNews && _parsedReport?['news_report'] != null) {
-          panels.add(
-            ExpansionPanelRadio(
-              value: 'news',
-              headerBuilder: (context, isExpanded) => const ListTile(
-                title: Text('Macro & Market News'),
-              ),
-              body: Padding(
-                padding: const EdgeInsets.all(8),
-                child: MarkdownBody(data: _parsedReport!['news_report'] as String),
-              ),
-            ),
-          );
-        }
-        if (_availability.analystBreakdown &&
-            _parsedReport?['investment_debate_state'] != null) {
-          panels.add(
-            ExpansionPanelRadio(
-              value: 'analysts',
-              headerBuilder: (context, isExpanded) => const ListTile(
-                title: Text('Analyst Team Breakdown'),
-              ),
-              body: Padding(
-                padding: const EdgeInsets.all(8),
-                child: MarkdownBody(
-                    data: _parsedReport!['investment_debate_state']['history'] as String),
-              ),
-            ),
-          );
-        }
-        if (_availability.riskAssessment &&
-            _parsedReport?['risk_debate_state'] != null) {
-          panels.add(
-            ExpansionPanelRadio(
-              value: 'risk',
-              headerBuilder: (context, isExpanded) => const ListTile(
-                title: Text('Risk Assessment'),
-              ),
-              body: Padding(
-                padding: const EdgeInsets.all(8),
-                child: MarkdownBody(
-                    data: _parsedReport!['risk_debate_state']['history'] as String),
-              ),
-            ),
-          );
-        }
-        if (_parsedReport?['final_trade_decision'] != null) {
-          panels.add(
-            ExpansionPanelRadio(
-              value: 'final',
-              headerBuilder: (context, isExpanded) => const ListTile(
-                title: Text('Final Trade Decision'),
-              ),
-              body: Container(
-                padding: const EdgeInsets.all(8),
-                color: Colors.lightGreen.shade50,
-                child: MarkdownBody(
-                  data: '**FINAL TRANSACTION PROPOSAL**\n\n${_parsedReport!['final_trade_decision']}',
-                ),
-              ),
-            ),
-          );
-        }
-        if (panels.isEmpty) return const SizedBox.shrink();
-        return ExpansionPanelList.radio(children: panels);
-      },
-    );
+          ),
+        ),
+      );
+    }
+    if (panels.isEmpty) return const SizedBox.shrink();
+    return ExpansionPanelList.radio(children: panels);
   }
 
   Widget _buildStreamingBox() {
