@@ -713,6 +713,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 ),
               ),
             ),
+          ),
           const SizedBox(height: 8),
           Text(
             "Tool Calls: $_toolCalls  |  LLM Calls: $_llmCalls  |  Reports: $_reportsGenerated",
