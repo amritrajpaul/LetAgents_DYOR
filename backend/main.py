@@ -9,6 +9,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import inspect, text
 
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
@@ -30,6 +31,35 @@ app.add_middleware(
 
 # Initialize database
 Base.metadata.create_all(bind=engine)
+
+def _ensure_analysis_columns():
+    """Create new columns in analysis_records if they don't exist."""
+    inspector = inspect(engine)
+    if not inspector.has_table("analysis_records"):
+        return
+    existing = {col["name"] for col in inspector.get_columns("analysis_records")}
+    with engine.begin() as conn:
+        if "tool_calls" not in existing:
+            conn.execute(
+                text(
+                    "ALTER TABLE analysis_records ADD COLUMN tool_calls INTEGER DEFAULT 0"
+                )
+            )
+        if "llm_calls" not in existing:
+            conn.execute(
+                text(
+                    "ALTER TABLE analysis_records ADD COLUMN llm_calls INTEGER DEFAULT 0"
+                )
+            )
+        if "reports_generated" not in existing:
+            conn.execute(
+                text(
+                    "ALTER TABLE analysis_records ADD COLUMN reports_generated INTEGER DEFAULT 0"
+                )
+            )
+
+
+_ensure_analysis_columns()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-me")
