@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'login_screen.dart';
 import 'history_screen.dart';
@@ -227,6 +228,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     final client = http.Client();
     _activeClient = client;
     try {
+      await WakelockPlus.enable();
       final request = http.Request('POST', Uri.parse('$backendUrl/analyze/stream'))
         ..headers.addAll({
           'Content-Type': 'application/json',
@@ -312,6 +314,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         _error = 'Error: $e';
       });
     } finally {
+      WakelockPlus.disable();
       client.close();
       _activeClient = null;
       if (mounted && _loading) {
