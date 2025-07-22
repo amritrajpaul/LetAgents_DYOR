@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Sequence
+from sqlalchemy.sql import func
 from .database import Base
 
 
@@ -26,3 +27,17 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     openai_api_key = Column(String, nullable=True)
     finnhub_api_key = Column(String, nullable=True)
+
+
+class AnalysisResult(Base):
+    """Store summarized analysis results."""
+
+    __tablename__ = "analysis_results"
+
+    id = Column(Integer, Sequence("analysis_results_id_seq"), primary_key=True)
+    query_text = Column(String(500), nullable=False)
+    result_summary = Column(Text, nullable=False)
+    full_report_json = Column(Text, nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    user_id = Column(String(100), nullable=True)
+    status = Column(String(50), nullable=True)
