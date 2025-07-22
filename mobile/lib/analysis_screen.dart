@@ -181,7 +181,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _loading = false;
     });
     _activeClient?.close();
-    WakelockPlus.disable();
   }
 
   Future<void> _runAnalysis() async {
@@ -211,8 +210,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
     _tickerController.text = ticker;
 
-    await WakelockPlus.enable();
-
   setState(() {
       _loading = true;
       _progress = 0;
@@ -231,6 +228,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     final client = http.Client();
     _activeClient = client;
     try {
+      await WakelockPlus.enable();
       final request = http.Request('POST', Uri.parse('$backendUrl/analyze/stream'))
         ..headers.addAll({
           'Content-Type': 'application/json',
