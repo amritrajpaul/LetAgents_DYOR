@@ -37,6 +37,7 @@ dependencies:
   http: ^1.2.1
   shared_preferences: ^2.2.2
   flutter_markdown: ^0.6.17
+  wakelock_plus: ^1.3.2
 
 dev_dependencies:
   # The "flutter_lints" package below contains a set of recommended lints to
