@@ -2,6 +2,7 @@ import os
 import json
 from langchain_core.messages import BaseMessage
 from typing import List, Optional
+from datetime import datetime
 
 import jwt
 from fastapi import FastAPI, HTTPException, Depends, status
@@ -15,7 +16,10 @@ from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 from .database import Base, engine, get_db
 from .models import User, AnalysisRecord
-from .analysis_result_service import store_analysis_in_db
+from .analysis_result_service import (
+    store_analysis_in_db,
+    get_user_results_from_db,
+)
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
@@ -134,6 +138,21 @@ class UserLogin(BaseModel):
 class UpdateKeys(BaseModel):
     openai_api_key: Optional[str] = None
     finnhub_api_key: Optional[str] = None
+
+
+class AnalysisResponse(BaseModel):
+    """Response model for analysis result entries."""
+
+    id: int
+    query_text: str
+    result_summary: str
+    full_report_json: Optional[str] = None
+    created_at: datetime
+    user_id: Optional[str] = None
+    status: Optional[str] = None
+
+    class Config:
+        orm_mode = True
 
 
 def compute_data_availability(state: dict) -> dict:
@@ -501,6 +520,16 @@ def history_detail(
             "reports": record.reports_generated,
         },
     }
+
+
+@app.get("/results/{user_id}", response_model=List[AnalysisResponse])
+def get_user_results(user_id: str, db: Session = Depends(get_db)):
+    """Return all analysis results belonging to ``user_id``."""
+
+    try:
+        return get_user_results_from_db(db=db, user_id=user_id)
+    except Exception as exc:  # pragma: no cover - simple passthrough
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 # To run locally:

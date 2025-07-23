@@ -106,3 +106,9 @@ def get_user_analysis_results(user_id: str, db: Session) -> list[AnalysisResult]
             "Failed to fetch AnalysisResults for user %s: %s", user_id, exc
         )
         raise
+
+
+def get_user_results_from_db(db: Session, user_id: str) -> list[AnalysisResult]:
+    """Wrapper to fetch all results for a given user using ``get_user_analysis_results``."""
+
+    return get_user_analysis_results(user_id=user_id, db=db)
