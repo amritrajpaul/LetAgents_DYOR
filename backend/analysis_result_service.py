@@ -55,3 +55,32 @@ def get_analysis_result(analysis_id: int, db: Session) -> Optional[AnalysisResul
     except SQLAlchemyError as exc:
         logging.error("Failed to fetch AnalysisResult %s: %s", analysis_id, exc)
         raise
+
+
+def get_user_analysis_results(user_id: str, db: Session) -> list[AnalysisResult]:
+    """Retrieve all AnalysisResults for a given user ordered by newest first.
+
+    Parameters
+    ----------
+    user_id : str
+        Identifier of the user whose analysis results should be fetched.
+    db : Session
+        SQLAlchemy session used for the query.
+
+    Returns
+    -------
+    list[AnalysisResult]
+        Collection of AnalysisResult objects, empty if none found.
+    """
+    try:
+        return (
+            db.query(AnalysisResult)
+            .filter(AnalysisResult.user_id == user_id)
+            .order_by(AnalysisResult.created_at.desc())
+            .all()
+        )
+    except SQLAlchemyError as exc:
+        logging.error(
+            "Failed to fetch AnalysisResults for user %s: %s", user_id, exc
+        )
+        raise
