@@ -35,6 +35,28 @@ def create_analysis_result(new_analysis_data: dict, db: Session) -> AnalysisResu
         raise
 
 
+def store_analysis_in_db(db: Session, analysis_data: dict) -> Optional[AnalysisResult]:
+    """Persist analysis results using provided session and data.
+
+    Parameters
+    ----------
+    db : Session
+        Active SQLAlchemy session.
+    analysis_data : dict
+        Dictionary of column values for ``AnalysisResult``.
+
+    Returns
+    -------
+    Optional[AnalysisResult]
+        The saved ``AnalysisResult`` or ``None`` on failure.
+    """
+    try:
+        return create_analysis_result(analysis_data, db)
+    except SQLAlchemyError as exc:
+        logging.error("Failed to store analysis result: %s", exc)
+        return None
+
+
 def get_analysis_result(analysis_id: int, db: Session) -> Optional[AnalysisResult]:
     """Retrieve a single AnalysisResult by its primary key.
 

@@ -15,6 +15,7 @@ from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 from .database import Base, engine, get_db
 from .models import User, AnalysisRecord
+from .analysis_result_service import store_analysis_in_db
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 
@@ -234,7 +235,7 @@ def update_keys(
     return {"status": "ok"}
 
 
-@app.post("/analyze")
+@app.post("/analyze", status_code=status.HTTP_201_CREATED)
 def analyze(
     request: AnalyzeRequest,
     current_user: User = Depends(get_current_user),
@@ -273,7 +274,7 @@ def analyze(
 
         metrics = compute_metrics(final_state)
 
-        # Persist the result
+        # Persist detailed and summarized results
         record = AnalysisRecord(
             user_id=current_user.id,
             ticker=request.ticker,
@@ -287,6 +288,17 @@ def analyze(
         db.add(record)
         db.commit()
         db.refresh(record)
+
+        new_analysis_data = {
+            "query_text": request.ticker,
+            "result_summary": decision,
+            "full_report_json": json.dumps(final_state, default=_serialize_obj),
+            "user_id": str(current_user.id),
+            "status": "completed",
+        }
+        stored_summary = store_analysis_in_db(db=db, analysis_data=new_analysis_data)
+        if stored_summary is None:
+            raise RuntimeError("Failed to store summary")
 
         serialized_report = json.loads(json.dumps(final_state, default=_serialize_obj))
         return {
