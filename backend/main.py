@@ -374,6 +374,43 @@ def analyze_stream(
             tool_calls = 0
             llm_calls = 0
             reports_generated = 0
+            agent_status = {
+                # Analyst Team
+                "Market Analyst": "pending",
+                "Social Analyst": "pending",
+                "News Analyst": "pending",
+                "Fundamentals Analyst": "pending",
+                # Research Team
+                "Bull Researcher": "pending",
+                "Bear Researcher": "pending",
+                "Research Manager": "pending",
+                "Trader": "pending",
+                # Risk Management Team
+                "Risky Analyst": "pending",
+                "Neutral Analyst": "pending",
+                "Safe Analyst": "pending",
+                # Portfolio Management Team
+                "Portfolio Manager": "pending",
+            }
+
+            def update_status(agent: str, status: str):
+                if agent_status.get(agent) != status:
+                    agent_status[agent] = status
+                    return ServerSentEvent(
+                        event="status",
+                        data=json.dumps({"agent": agent, "status": status}),
+                    )
+                return None
+
+            def update_research_team(status: str):
+                events = []
+                for a in ["Bull Researcher", "Bear Researcher", "Research Manager", "Trader"]:
+                    ev = update_status(a, status)
+                    if ev:
+                        events.append(ev)
+                return events
+
+            selected_analysts = request.analysts or ["market", "social", "news", "fundamentals"]
             seen_messages = 0
             seen_reports = set()
             report_keys = [
@@ -414,6 +451,74 @@ def analyze_stream(
                                 }
                             ),
                         )
+                # Agent status updates
+                events_to_send = []
+                if chunk.get("market_report"):
+                    ev = update_status("Market Analyst", "completed")
+                    if ev:
+                        events_to_send.append(ev)
+                    if "social" in selected_analysts:
+                        ev = update_status("Social Analyst", "in_progress")
+                        if ev:
+                            events_to_send.append(ev)
+
+                if chunk.get("sentiment_report"):
+                    ev = update_status("Social Analyst", "completed")
+                    if ev:
+                        events_to_send.append(ev)
+                    if "news" in selected_analysts:
+                        ev = update_status("News Analyst", "in_progress")
+                        if ev:
+                            events_to_send.append(ev)
+
+                if chunk.get("news_report"):
+                    ev = update_status("News Analyst", "completed")
+                    if ev:
+                        events_to_send.append(ev)
+                    if "fundamentals" in selected_analysts:
+                        ev = update_status("Fundamentals Analyst", "in_progress")
+                        if ev:
+                            events_to_send.append(ev)
+
+                if chunk.get("fundamentals_report"):
+                    ev = update_status("Fundamentals Analyst", "completed")
+                    if ev:
+                        events_to_send.append(ev)
+                    events_to_send.extend(update_research_team("in_progress"))
+
+                if chunk.get("investment_debate_state") and chunk["investment_debate_state"].get("judge_decision"):
+                    events_to_send.extend(update_research_team("completed"))
+                    ev = update_status("Risky Analyst", "in_progress")
+                    if ev:
+                        events_to_send.append(ev)
+
+                if chunk.get("trader_investment_plan"):
+                    ev = update_status("Trader", "completed")
+                    if ev:
+                        events_to_send.append(ev)
+
+                if chunk.get("risk_debate_state"):
+                    risk_state = chunk["risk_debate_state"]
+                    if risk_state.get("current_risky_response"):
+                        ev = update_status("Risky Analyst", "in_progress")
+                        if ev:
+                            events_to_send.append(ev)
+                    if risk_state.get("current_safe_response"):
+                        ev = update_status("Safe Analyst", "in_progress")
+                        if ev:
+                            events_to_send.append(ev)
+                    if risk_state.get("current_neutral_response"):
+                        ev = update_status("Neutral Analyst", "in_progress")
+                        if ev:
+                            events_to_send.append(ev)
+                    if risk_state.get("judge_decision"):
+                        for a in ["Risky Analyst", "Safe Analyst", "Neutral Analyst", "Portfolio Manager"]:
+                            ev = update_status(a, "completed")
+                            if ev:
+                                events_to_send.append(ev)
+
+                for ev in events_to_send:
+                    yield ev
 
                 for key in report_keys:
                     if chunk.get(key) and key not in seen_reports:
@@ -443,6 +548,11 @@ def analyze_stream(
             serialized_report = json.loads(
                 json.dumps(final_state, default=_serialize_obj)
             )
+            # Mark remaining agents completed
+            for agent in list(agent_status.keys()):
+                ev = update_status(agent, "completed")
+                if ev:
+                    yield ev
             yield ServerSentEvent(
                 event="complete",
                 data=json.dumps(
