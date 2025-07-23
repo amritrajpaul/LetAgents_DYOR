@@ -18,6 +18,7 @@ if DATABASE_URL.startswith("oracle+cx_oracle") and WALLET_PATH:
     except Exception as exc:
         raise RuntimeError(f"Oracle client initialization failed: {exc}") from exc
 
+
 try:
     engine = create_engine(
         DATABASE_URL,
