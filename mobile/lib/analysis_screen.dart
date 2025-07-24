@@ -95,6 +95,58 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     'fundamentals': true,
   };
 
+  final Map<String, String> _agentStatus = {
+    'Market Analyst': 'pending',
+    'Social Analyst': 'pending',
+    'News Analyst': 'pending',
+    'Fundamentals Analyst': 'pending',
+    'Bull Researcher': 'pending',
+    'Bear Researcher': 'pending',
+    'Research Manager': 'pending',
+    'Trader': 'pending',
+    'Risky Analyst': 'pending',
+    'Neutral Analyst': 'pending',
+    'Safe Analyst': 'pending',
+    'Portfolio Manager': 'pending',
+  };
+
+  final Map<String, String> _reportStatus = {
+    'Market Analysis': 'pending',
+    'Sentiment Report': 'pending',
+    'News Report': 'pending',
+    'Fundamentals Report': 'pending',
+    'Investment Plan': 'pending',
+    'Trader Plan': 'pending',
+    'Risk Assessment': 'pending',
+    'Final Decision': 'pending',
+  };
+
+  static const Map<String, String> _agentToReport = {
+    'Market Analyst': 'Market Analysis',
+    'Social Analyst': 'Sentiment Report',
+    'News Analyst': 'News Report',
+    'Fundamentals Analyst': 'Fundamentals Report',
+    'Bull Researcher': 'Investment Plan',
+    'Bear Researcher': 'Investment Plan',
+    'Research Manager': 'Investment Plan',
+    'Trader': 'Trader Plan',
+    'Risky Analyst': 'Risk Assessment',
+    'Neutral Analyst': 'Risk Assessment',
+    'Safe Analyst': 'Risk Assessment',
+    'Portfolio Manager': 'Final Decision',
+  };
+
+  void _updateReportFromAgent(String agent, String status) {
+    final report = _agentToReport[agent];
+    if (report != null && _reportStatus.containsKey(report)) {
+      if (status == 'in_progress' && _reportStatus[report] == 'pending') {
+        _reportStatus[report] = 'in_progress';
+      } else if (status == 'completed') {
+        _reportStatus[report] = 'completed';
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -210,7 +262,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
     _tickerController.text = ticker;
 
-  setState(() {
+    setState(() {
       _loading = true;
       _progress = 0;
       _messages.clear();
@@ -223,6 +275,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _parsedReport = null;
       _availability = const DataAvailability.empty();
       _stopRequested = false;
+      _agentStatus.updateAll((key, value) => 'pending');
+      _reportStatus.updateAll((key, value) => 'pending');
     });
 
     final client = http.Client();
@@ -283,6 +337,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
               _toolCalls = data['tool_calls'] ?? _toolCalls;
               _llmCalls = data['llm_calls'] ?? _llmCalls;
               _reportsGenerated = data['reports'] ?? _reportsGenerated;
+            } else if (event == 'status') {
+              final agent = data['agent']?.toString();
+              final status = data['status']?.toString();
+              if (agent != null && status != null && _agentStatus.containsKey(agent)) {
+                _agentStatus[agent] = status;
+                _updateReportFromAgent(agent, status);
+              }
             } else if (event == 'complete') {
               _progress = 1.0;
               _decision = data['decision']?.toString();
@@ -298,6 +359,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 _llmCalls = m['llm_calls'] ?? _llmCalls;
                 _reportsGenerated = m['reports'] ?? _reportsGenerated;
               }
+              _agentStatus.updateAll((key, value) => 'completed');
+              _reportStatus.updateAll((key, value) => 'completed');
               _loading = false;
             } else if (event == 'error') {
               _error = data['detail']?.toString();
@@ -544,9 +607,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   child: const Text('Analyze'),
                 ),
               ),
-            if (_messages.isNotEmpty) ...[
+            if (_messages.isNotEmpty || _loading) ...[
               const SizedBox(height: 16),
-              _buildStreamingBox(),
+              _buildAgentStatusBox(),
+              if (_messages.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildStreamingBox(),
+              ],
             ],
           ],
         ),
@@ -692,6 +759,68 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     }
     if (panels.isEmpty) return const SizedBox.shrink();
     return ExpansionPanelList.radio(children: panels);
+  }
+
+  Widget _buildAgentStatusBox() {
+    Icon _iconForStatus(String status) {
+      switch (status) {
+        case 'completed':
+          return const Icon(Icons.check_circle, color: Colors.green);
+        case 'in_progress':
+          return const Icon(Icons.autorenew, color: Colors.orange);
+        default:
+          return const Icon(Icons.hourglass_empty, color: Colors.grey);
+      }
+    }
+
+    final agentTiles = _agentStatus.entries.map((e) {
+      return ListTile(
+        dense: true,
+        leading: _iconForStatus(e.value),
+        title: Text(e.key),
+        trailing: Text(e.value),
+      );
+    }).toList();
+
+    final reportTiles = _reportStatus.entries.map((e) {
+      return ListTile(
+        dense: true,
+        leading: _iconForStatus(e.value),
+        title: Text(e.key),
+        trailing: Text(e.value),
+      );
+    }).toList();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: ExpansionTile(
+        leading: _loading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.tune),
+        title: const Text('Process Status'),
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(8),
+            child: Text('Agents', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          ...agentTiles,
+          const Padding(
+            padding: EdgeInsets.all(8),
+            child:
+                Text('Reports', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          ...reportTiles,
+        ],
+      ),
+    );
   }
 
   Widget _buildStreamingBox() {
