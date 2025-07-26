@@ -13,7 +13,7 @@ For details on how the agents work together, see [docs/ARCHITECTURE.md](docs/ARC
 ## 📱 Features
 
 - Intelligent multi-agent analysis for stocks
-- User authentication and per-user OpenAI API key management
+- User authentication and per-user OpenAI and Finnhub API key management
 - History of analyses and easy result sharing
 - Deployed with Docker on OCI free tier resources
 - Clean and modern UI using Flutter (Material 3)
@@ -59,6 +59,13 @@ For details on how the agents work together, see [docs/ARCHITECTURE.md](docs/ARC
    flutter run --dart-define=BACKEND_URL=http://<your-ip>:8000
    ```
 Replace `<your-ip>` with the backend host. Use `localhost` for the iOS Simulator, `10.0.2.2` for the Android Emulator, or your computer's network IP for a physical device.
+
+5. (Optional) Save your OpenAI and Finnhub keys after logging in:
+   ```bash
+   curl -X PUT http://<your-ip>:8000/keys \
+        -H 'Authorization: Bearer <token>' \
+        -d '{"openai_api_key":"sk-...","finnhub_api_key":"fh-..."}'
+   ```
 
 ## 🧑‍💻 Developer Guide
 
