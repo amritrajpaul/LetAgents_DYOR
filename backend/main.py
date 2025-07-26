@@ -4,6 +4,8 @@ from langchain_core.messages import BaseMessage
 from typing import List, Optional
 from datetime import datetime
 
+import backend.analytics
+
 import jwt
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
