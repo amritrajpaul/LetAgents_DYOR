@@ -42,8 +42,9 @@ For details on how the agents work together, see [docs/ARCHITECTURE.md](docs/ARC
    pip install -r requirements.txt
    # configure environment
    cp .env.example .env  # or export variables directly
-   export OPENAI_API_KEY=your-key
-   export FINNHUB_API_KEY=your-finnhub-key
+    export OPENAI_API_KEY=your-key
+    export FINNHUB_API_KEY=your-finnhub-key
+    export TRADINGAGENTS_DATA_DIR=/path/to/your/data
    ```
 3. Build and run with Docker
    ```bash
@@ -71,7 +72,7 @@ LetAgents_DYOR/
 - Contributions are welcome! Open issues or submit pull requests.
 - The CLI can still be executed via `python -m cli.main` or you can call `POST /analyze` from the API.
 - Retrieve past analyses with `GET /history` and view details with `GET /history/{id}`.
-- Environment variables can be set in `backend/.env` or exported before running the server.
+ - Environment variables can be set in `backend/.env` or exported before running the server. `TRADINGAGENTS_DATA_DIR` controls where the backend reads its data files.
 - Start the FastAPI server locally with:
   ```bash
   pip install -r backend/requirements.txt
