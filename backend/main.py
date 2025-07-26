@@ -25,6 +25,7 @@ from .analysis_result_service import (
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 from .posthog_middleware import PostHogMiddleware
+from .auth_middleware import AuthTokenMiddleware
 
 app = FastAPI()
 
@@ -66,6 +67,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(AuthTokenMiddleware)
 app.add_middleware(PostHogMiddleware)
 
 # Initialize database
