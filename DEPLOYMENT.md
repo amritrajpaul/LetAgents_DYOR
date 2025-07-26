@@ -47,7 +47,7 @@ docker run -d -p 80:8000 letagents-backend
    docker login <registry>
    docker push <registry>/<user>/letagents-backend:latest
    ```
-   Replace `<registry>` with `phx.ocir.io` for Oracle or `docker.io` for Docker Hub, and `<user>` with your namespace.
+Replace `<registry>` with your registry's address (e.g., `phx.ocir.io` for Oracle, `docker.io` for Docker Hub), `<user>` with your registry username or organization name, and `<tag>` with a specific version (e.g., `v1.0.0`).
 
 ### Option B: Run Directly on the VM
 1. Install Python and requirements:
