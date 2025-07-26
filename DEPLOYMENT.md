@@ -41,6 +41,14 @@ docker run -d -p 80:8000 letagents-backend
    ```
    This maps port 8000 in the container to port 80 on the VM (you can also expose 8000 directly).
 
+5. (Optional) Publish the image to a container registry:
+   ```bash
+   docker tag letagents-backend <registry>/<user>/letagents-backend:latest
+   docker login <registry>
+   docker push <registry>/<user>/letagents-backend:latest
+   ```
+Replace `<registry>` with your registry's address (e.g., `phx.ocir.io` for Oracle, `docker.io` for Docker Hub), `<user>` with your registry username or organization name, and `<tag>` with a specific version (e.g., `v1.0.0`).
+
 ### Option B: Run Directly on the VM
 1. Install Python and requirements:
    ```bash
