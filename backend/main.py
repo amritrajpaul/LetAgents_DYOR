@@ -7,7 +7,8 @@ from datetime import datetime
 import backend.analytics
 
 import jwt
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -24,9 +25,39 @@ from .analysis_result_service import (
 )
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
+import posthog
 from .posthog_middleware import PostHogMiddleware
 
 app = FastAPI()
+
+# Configure PostHog if a key is provided
+POSTHOG_API_KEY = os.getenv("POSTHOG_API_KEY")
+POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://app.posthog.com")
+if POSTHOG_API_KEY:
+    posthog.project_api_key = POSTHOG_API_KEY
+    posthog.host = POSTHOG_HOST
+
+# Global exception handler to report unexpected errors
+@app.exception_handler(Exception)
+async def capture_exceptions(request: Request, exc: Exception):
+    if POSTHOG_API_KEY:
+        try:
+            import traceback
+            posthog.capture(
+                distinct_id="backend",
+                event="error",
+                properties={
+                    "path": request.url.path,
+                    "error": str(exc),
+                    "traceback": traceback.format_exc(),
+                },
+            )
+        except Exception:
+            pass
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
 
 # Allow all origins for development; restrict in production
 app.add_middleware(
