@@ -4,3 +4,4 @@ sqlalchemy
 passlib[bcrypt]
 PyJWT
 sse-starlette
+posthog
