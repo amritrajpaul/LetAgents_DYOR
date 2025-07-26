@@ -3,6 +3,7 @@ import json
 from langchain_core.messages import BaseMessage
 from typing import List, Optional
 from datetime import datetime
+import posthog
 
 import backend.analytics
 
@@ -71,6 +72,15 @@ app.add_middleware(PostHogMiddleware)
 
 # Initialize database
 Base.metadata.create_all(bind=engine)
+
+POSTHOG_API_KEY = os.getenv("POSTHOG_API_KEY")
+POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://app.posthog.com")
+if POSTHOG_API_KEY:
+    posthog.project_api_key = POSTHOG_API_KEY
+    posthog.host = POSTHOG_HOST
+    POSTHOG_ENABLED = True
+else:
+    POSTHOG_ENABLED = False
 
 def _ensure_analysis_columns():
     """Create new columns in analysis_records if they don't exist."""
@@ -250,6 +260,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.add(user_obj)
     db.commit()
     db.refresh(user_obj)
+    if POSTHOG_ENABLED:
+        posthog.identify(user_obj.id, {"email": user_obj.email})
     return {"id": user_obj.id}
 
 
@@ -261,6 +273,8 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
     token = create_access_token({"id": user.id, "email": user.email})
+    if POSTHOG_ENABLED:
+        posthog.identify(user.id, {"email": user.email})
     return {"token": token}
 
 
