@@ -4,6 +4,8 @@ from langchain_core.messages import BaseMessage
 from typing import List, Optional
 from datetime import datetime
 
+import backend.analytics
+
 import jwt
 from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.responses import JSONResponse
@@ -24,6 +26,7 @@ from .analysis_result_service import (
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 import posthog
+from .posthog_middleware import PostHogMiddleware
 
 app = FastAPI()
 
@@ -64,6 +67,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(PostHogMiddleware)
 
 # Initialize database
 Base.metadata.create_all(bind=engine)
