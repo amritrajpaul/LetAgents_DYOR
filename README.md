@@ -45,6 +45,8 @@ For details on how the agents work together, see [docs/ARCHITECTURE.md](docs/ARC
     export OPENAI_API_KEY=your-key
     export FINNHUB_API_KEY=your-finnhub-key
     export TRADINGAGENTS_DATA_DIR=/path/to/your/data
+    # Optional analytics with PostHog
+    export POSTHOG_API_KEY=phc_xxx
    ```
 3. Build and run with Docker
    ```bash
