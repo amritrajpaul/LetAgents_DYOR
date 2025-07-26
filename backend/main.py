@@ -39,12 +39,14 @@ if POSTHOG_API_KEY:
 async def capture_exceptions(request: Request, exc: Exception):
     if POSTHOG_API_KEY:
         try:
+            import traceback
             posthog.capture(
                 distinct_id="backend",
                 event="error",
                 properties={
                     "path": request.url.path,
                     "error": str(exc),
+                    "traceback": traceback.format_exc(),
                 },
             )
         except Exception:
