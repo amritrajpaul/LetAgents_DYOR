@@ -51,6 +51,8 @@ docker run -d -p 80:8000 letagents-backend
    ```bash
    export OPENAI_API_KEY=your-openai-key
    export FINNHUB_API_KEY=your-finnhub-key
+   # required if using Oracle Autonomous DB
+   export ORACLE_WALLET_PATH=/path/to/your/wallet
    ```
 3. Start the server:
    ```bash
