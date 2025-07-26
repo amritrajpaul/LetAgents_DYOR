@@ -1,4 +1,3 @@
-import os
 import uuid
 from typing import Optional
 
@@ -6,12 +5,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 import posthog
 
-POSTHOG_API_KEY = os.getenv("POSTHOG_API_KEY")
-POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://app.posthog.com")
-
-if POSTHOG_API_KEY:
-    posthog.project_api_key = POSTHOG_API_KEY
-    posthog.host = POSTHOG_HOST
+from .posthog_config import POSTHOG_ENABLED
 
 
 class PostHogMiddleware(BaseHTTPMiddleware):
@@ -24,7 +18,7 @@ class PostHogMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        if POSTHOG_API_KEY:
+        if POSTHOG_ENABLED:
             posthog.capture(
                 distinct_id=str(user_id),
                 event="http_request",
