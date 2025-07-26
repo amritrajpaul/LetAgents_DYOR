@@ -296,6 +296,7 @@ def update_keys(
 @app.post("/analyze", status_code=status.HTTP_201_CREATED)
 def analyze(
     request: AnalyzeRequest,
+    http_request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -368,6 +369,17 @@ def analyze(
             "metrics": metrics,
         }
     except Exception as exc:
+        if POSTHOG_ENABLED:
+            import traceback
+            posthog.capture(
+                distinct_id=str(current_user.id),
+                event="error",
+                properties={
+                    "path": http_request.url.path,
+                    "error": str(exc),
+                    "traceback": traceback.format_exc(),
+                },
+            )
         raise HTTPException(status_code=500, detail=str(exc))
 
 
@@ -672,12 +684,23 @@ def history_detail(
 
 
 @app.get("/results/{user_id}", response_model=List[AnalysisResponse])
-def get_user_results(user_id: str, db: Session = Depends(get_db)):
+def get_user_results(user_id: str, req: Request, db: Session = Depends(get_db)):
     """Return all analysis results belonging to ``user_id``."""
 
     try:
         return get_user_results_from_db(db=db, user_id=user_id)
     except Exception as exc:  # pragma: no cover - simple passthrough
+        if POSTHOG_ENABLED:
+            import traceback
+            posthog.capture(
+                distinct_id=str(user_id),
+                event="error",
+                properties={
+                    "path": req.url.path,
+                    "error": str(exc),
+                    "traceback": traceback.format_exc(),
+                },
+            )
         raise HTTPException(status_code=500, detail=str(exc))
 
 
