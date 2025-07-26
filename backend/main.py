@@ -5,8 +5,6 @@ from typing import List, Optional
 from datetime import datetime
 import posthog
 
-import backend.analytics
-
 import jwt
 from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.responses import JSONResponse
@@ -26,33 +24,19 @@ from .analysis_result_service import (
 )
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
-import posthog
 from .posthog_middleware import PostHogMiddleware
+from .posthog_config import POSTHOG_ENABLED, capture_error
 
 app = FastAPI()
 
-# Configure PostHog if a key is provided
-POSTHOG_API_KEY = os.getenv("POSTHOG_API_KEY")
-POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://app.posthog.com")
-if POSTHOG_API_KEY:
-    posthog.project_api_key = POSTHOG_API_KEY
-    posthog.host = POSTHOG_HOST
+# PostHog configuration happens in posthog_config
 
 # Global exception handler to report unexpected errors
 @app.exception_handler(Exception)
 async def capture_exceptions(request: Request, exc: Exception):
-    if POSTHOG_API_KEY:
+    if POSTHOG_ENABLED:
         try:
-            import traceback
-            posthog.capture(
-                distinct_id="backend",
-                event="error",
-                properties={
-                    "path": request.url.path,
-                    "error": str(exc),
-                    "traceback": traceback.format_exc(),
-                },
-            )
+            capture_error("backend", request.url.path, exc)
         except Exception:
             pass
     return JSONResponse(
@@ -73,14 +57,6 @@ app.add_middleware(PostHogMiddleware)
 # Initialize database
 Base.metadata.create_all(bind=engine)
 
-POSTHOG_API_KEY = os.getenv("POSTHOG_API_KEY")
-POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://app.posthog.com")
-if POSTHOG_API_KEY:
-    posthog.project_api_key = POSTHOG_API_KEY
-    posthog.host = POSTHOG_HOST
-    POSTHOG_ENABLED = True
-else:
-    POSTHOG_ENABLED = False
 
 def _ensure_analysis_columns():
     """Create new columns in analysis_records if they don't exist."""
@@ -112,7 +88,9 @@ def _ensure_analysis_columns():
 _ensure_analysis_columns()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.environ.get("SECRET_KEY", "change-me")
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable must be set")
 ALGORITHM = "HS256"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
@@ -136,10 +114,10 @@ def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: int = payload.get("id")
-    except Exception:
+    except jwt.PyJWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        )
+        ) from exc
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -306,6 +284,7 @@ def update_keys(
 @app.post("/analyze", status_code=status.HTTP_201_CREATED)
 def analyze(
     request: AnalyzeRequest,
+    http_request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -378,6 +357,8 @@ def analyze(
             "metrics": metrics,
         }
     except Exception as exc:
+        if POSTHOG_ENABLED:
+            capture_error(str(current_user.id), http_request.url.path, exc)
         raise HTTPException(status_code=500, detail=str(exc))
 
 
@@ -682,12 +663,14 @@ def history_detail(
 
 
 @app.get("/results/{user_id}", response_model=List[AnalysisResponse])
-def get_user_results(user_id: str, db: Session = Depends(get_db)):
+def get_user_results(user_id: str, req: Request, db: Session = Depends(get_db)):
     """Return all analysis results belonging to ``user_id``."""
 
     try:
         return get_user_results_from_db(db=db, user_id=user_id)
     except Exception as exc:  # pragma: no cover - simple passthrough
+        if POSTHOG_ENABLED:
+            capture_error(str(user_id), req.url.path, exc)
         raise HTTPException(status_code=500, detail=str(exc))
 
 
