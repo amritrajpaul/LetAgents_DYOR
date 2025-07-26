@@ -5,8 +5,6 @@ from typing import List, Optional
 from datetime import datetime
 import posthog
 
-import backend.analytics
-
 import jwt
 from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.responses import JSONResponse
@@ -26,7 +24,6 @@ from .analysis_result_service import (
 )
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
-import posthog
 from .posthog_middleware import PostHogMiddleware
 
 app = FastAPI()
@@ -34,7 +31,8 @@ app = FastAPI()
 # Configure PostHog if a key is provided
 POSTHOG_API_KEY = os.getenv("POSTHOG_API_KEY")
 POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://app.posthog.com")
-if POSTHOG_API_KEY:
+POSTHOG_ENABLED = bool(POSTHOG_API_KEY)
+if POSTHOG_ENABLED:
     posthog.project_api_key = POSTHOG_API_KEY
     posthog.host = POSTHOG_HOST
 
@@ -73,14 +71,6 @@ app.add_middleware(PostHogMiddleware)
 # Initialize database
 Base.metadata.create_all(bind=engine)
 
-POSTHOG_API_KEY = os.getenv("POSTHOG_API_KEY")
-POSTHOG_HOST = os.getenv("POSTHOG_HOST", "https://app.posthog.com")
-if POSTHOG_API_KEY:
-    posthog.project_api_key = POSTHOG_API_KEY
-    posthog.host = POSTHOG_HOST
-    POSTHOG_ENABLED = True
-else:
-    POSTHOG_ENABLED = False
 
 def _ensure_analysis_columns():
     """Create new columns in analysis_records if they don't exist."""
