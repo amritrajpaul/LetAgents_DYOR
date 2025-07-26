@@ -31,6 +31,7 @@ app = FastAPI()
 
 # PostHog configuration happens in posthog_config
 
+
 # Global exception handler to report unexpected errors
 @app.exception_handler(Exception)
 async def capture_exceptions(request: Request, exc: Exception):
@@ -52,6 +53,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(AuthTokenMiddleware)
 app.add_middleware(PostHogMiddleware)
 
 # Initialize database
