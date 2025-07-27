@@ -25,6 +25,7 @@ from .analysis_result_service import (
 from passlib.context import CryptContext
 from sse_starlette.sse import EventSourceResponse, ServerSentEvent
 from .posthog_middleware import PostHogMiddleware
+from .auth_middleware import AuthTokenMiddleware
 from .posthog_config import POSTHOG_ENABLED, capture_error
 
 app = FastAPI()
