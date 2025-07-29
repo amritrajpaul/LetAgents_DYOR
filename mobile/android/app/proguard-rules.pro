@@ -4,3 +4,4 @@
 -keep class io.flutter.embedding.android.* { *; }
 -keep class io.flutter.embedding.engine.FlutterEngine { *; }
 -keep class io.flutter.plugins.GeneratedPluginRegistrant { *; }
+-dontwarn com.google.android.play.core.**
