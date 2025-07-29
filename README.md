@@ -69,6 +69,28 @@ Replace `<your-ip>` with the backend host. Use `localhost` for the iOS Simulator
         -d '{"openai_api_key":"sk-...","finnhub_api_key":"fh-..."}'
    ```
 
+## 📦 Building a Release APK
+
+To distribute the Flutter app you need to sign it and then build a release APK.
+
+1. Generate a release keystore:
+   ```bash
+   keytool -genkey -v -keystore ~/my-release-key.jks \
+     -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000
+   ```
+2. Create `mobile/android/key.properties` with your credentials:
+   ```
+   storePassword=<your-store-password>
+   keyPassword=<your-key-password>
+   keyAlias=my-key-alias
+   storeFile=../my-release-key.jks
+   ```
+3. Build the APK from the `mobile/` directory:
+   ```bash
+   flutter build apk --release
+   ```
+
+
 ## 🧑‍💻 Developer Guide
 
 ```
