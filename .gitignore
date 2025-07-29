@@ -1,3 +1,29 @@
+# Flutter build output
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.dart_tool/
+
+# Android Studio files
+.idea/
+*.iml
+
+# Signing keys and local config
+key.properties
+*.jks
+
+# Environment files
+.env
+*.local
+
+# VS Code settings (optional)
+.vscode/
+
+# macOS files
+.DS_Store
+
+
 env/
 __pycache__/
 .DS_Store
